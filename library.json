@@ -27,9 +27,9 @@
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/BorisRazor-OkoDev/oled-ssd1315.git"
+        "url": "https://github.com/Call-me-Boris-The-Razor/oled-ssd1315.git"
     },
-    "homepage": "https://github.com/BorisRazor-OkoDev/oled-ssd1315",
+    "homepage": "https://github.com/Call-me-Boris-The-Razor/oled-ssd1315",
     "license": "MIT",
     "frameworks": ["arduino", "stm32cube"],
     "platforms": [
