@@ -398,6 +398,8 @@ if (addr != 0) {
 
 ### DMA передача (non-blocking)
 
+> ⚠️ **Ограничение:** DMA использует внутренний static буфер. Одновременно может работать только **один экземпляр** `OledSsd1315` с DMA. Для мульти-дисплейных конфигураций используйте обычный `flush()`.
+
 ```cpp
 // Требует настроенный DMA для I2C TX в CubeMX
 
@@ -412,12 +414,19 @@ while (!display.isDMAComplete()) {
     // Можно делать другую работу
     processOtherTasks();
 }
+```
 
-// Callback для завершения DMA (в stm32h7xx_it.c)
+#### Callback для завершения DMA
+
+В файле `stm32h7xx_it.c` (или соответствующем для вашего МК):
+
+```cpp
+// Объявите extern ссылку на объект дисплея
+extern OledSsd1315 display;
+
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c) {
-    // Установить флаг завершения
-    extern volatile bool dmaComplete;
-    dmaComplete = true;
+    // Вызовите метод завершения DMA
+    display.onDmaComplete();
 }
 ```
 

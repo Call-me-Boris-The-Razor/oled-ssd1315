@@ -1,10 +1,10 @@
 /**
  * @file OledConfig.hpp
  * @brief Единая конфигурация библиотеки OLED SSD1315
- * 
+ *
  * Все файлы библиотеки должны включать этот заголовок для получения
  * флага OLED_ENABLED, определения платформы и базовых настроек.
- * 
+ *
  * Поддерживаемые платформы:
  * - Arduino (Wire) - автоопределение или -DOLED_PLATFORM_ARDUINO=1
  * - STM32 HAL      - -DOLED_PLATFORM_STM32HAL=1
@@ -32,6 +32,7 @@
 #ifndef OLED_USE_STM32HAL
     #define OLED_USE_STM32HAL 0
 #endif
+// ESP-IDF поддержка (PLANNED - не реализовано)
 #ifndef OLED_USE_ESPIDF
     #define OLED_USE_ESPIDF 0
 #endif

@@ -55,6 +55,8 @@ OledResult OledSsd1315::begin(const OledConfig& cfg) {
     // Инициализируем драйвер
     OledResult res = driver_.init(adapter_, cfg);
     if (res != OledResult::Ok) {
+        lastResult_ = res;
+        lastErrorMsg_ = "Driver init failed";
         return res;
     }
     
@@ -65,6 +67,8 @@ OledResult OledSsd1315::begin(const OledConfig& cfg) {
     gfx_.clear();
     
     initialized_ = true;
+    lastResult_ = OledResult::Ok;
+    lastErrorMsg_ = nullptr;
     return OledResult::Ok;
 }
 
@@ -79,23 +83,35 @@ void OledSsd1315::resetState() {
 
 OledResult OledSsd1315::setPower(bool on) {
     if (!isReady()) {
-        return OledResult::NotInitialized;
+        lastResult_ = OledResult::NotInitialized;
+        lastErrorMsg_ = "Display not initialized";
+        return lastResult_;
     }
-    return driver_.setPower(on);
+    lastResult_ = driver_.setPower(on);
+    lastErrorMsg_ = (lastResult_ != OledResult::Ok) ? "setPower failed" : nullptr;
+    return lastResult_;
 }
 
 OledResult OledSsd1315::setContrast(uint8_t value) {
     if (!isReady()) {
-        return OledResult::NotInitialized;
+        lastResult_ = OledResult::NotInitialized;
+        lastErrorMsg_ = "Display not initialized";
+        return lastResult_;
     }
-    return driver_.setContrast(value);
+    lastResult_ = driver_.setContrast(value);
+    lastErrorMsg_ = (lastResult_ != OledResult::Ok) ? "setContrast failed" : nullptr;
+    return lastResult_;
 }
 
 OledResult OledSsd1315::invert(bool on) {
     if (!isReady()) {
-        return OledResult::NotInitialized;
+        lastResult_ = OledResult::NotInitialized;
+        lastErrorMsg_ = "Display not initialized";
+        return lastResult_;
     }
-    return driver_.setInvert(on);
+    lastResult_ = driver_.setInvert(on);
+    lastErrorMsg_ = (lastResult_ != OledResult::Ok) ? "invert failed" : nullptr;
+    return lastResult_;
 }
 
 void OledSsd1315::clear() {
@@ -112,9 +128,13 @@ void OledSsd1315::fill(bool color) {
 
 OledResult OledSsd1315::flush() {
     if (!isReady()) {
-        return OledResult::NotInitialized;
+        lastResult_ = OledResult::NotInitialized;
+        lastErrorMsg_ = "Display not initialized";
+        return lastResult_;
     }
-    return driver_.writeBuffer(gfx_.buffer(), gfx_.bufferSize());
+    lastResult_ = driver_.writeBuffer(gfx_.buffer(), gfx_.bufferSize());
+    lastErrorMsg_ = (lastResult_ != OledResult::Ok) ? "flush failed" : nullptr;
+    return lastResult_;
 }
 
 void OledSsd1315::pixel(int x, int y, bool color) {
