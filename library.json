@@ -1,6 +1,6 @@
 {
     "name": "oled_ssd1315",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "description": "Platform-agnostic OLED SSD1315/SSD1306 library. Supports Arduino Wire and STM32 HAL I2C. Framebuffer, graphics, UTF-8 text with Cyrillic support.",
     "keywords": [
         "oled",
@@ -9,11 +9,15 @@
         "i2c",
         "display",
         "graphics",
+        "framebuffer",
         "embedded",
         "esp32",
         "stm32",
         "stm32hal",
-        "platform-agnostic"
+        "arduino",
+        "platform-agnostic",
+        "cyrillic",
+        "utf8"
     ],
     "authors": [
         {
@@ -25,6 +29,7 @@
         "type": "git",
         "url": "https://github.com/BorisRazor-OkoDev/oled-ssd1315.git"
     },
+    "homepage": "https://github.com/BorisRazor-OkoDev/oled-ssd1315",
     "license": "MIT",
     "frameworks": ["arduino", "stm32cube"],
     "platforms": [
@@ -34,6 +39,7 @@
         "atmelavr",
         "atmelsam"
     ],
+    "headers": "oled/OledSsd1315.hpp",
     "build": {
         "srcDir": "src",
         "includeDir": "include",

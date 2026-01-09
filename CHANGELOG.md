@@ -4,6 +4,32 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/).
 
+## [2.1.1] - 2025-01-09
+
+### Исправлено (Audit Fixes)
+
+- **`scanAddress()`** — исправлена работа на Arduino (добавлен метод `probe()` в `II2c`)
+- **DMA callback** — добавлен `onDmaComplete()` для сброса `dmaInProgress_`
+- **README** — исправлена опечатка `oled` → `display`, обновлён badge версии
+- **`writeCommands()`** — команды отправляются одним I2C пакетом (было N пакетов)
+- **`writeData()`** — использует `OLED_I2C_CHUNK_SIZE` вместо хардкода `16`
+- **Символ `~`** — исправлен глиф в шрифте (был стрелка)
+- **WireI2cAdapter** — убран лишний `-1` для адреса в буфере
+
+### Добавлено
+
+- **`II2c::probe()`** — метод для проверки наличия устройства на шине
+- **`onDmaComplete()`** — callback для HAL_I2C_MasterTxCpltCallback
+- **`.editorconfig`** — настройки стиля кода
+- **Документация DMA** — ограничения static буфера
+
+### Изменено
+
+- **`lastResult_`/`lastErrorMsg_`** — заполняются во всех методах с `OledResult`
+- **ESP-IDF** — помечен как PLANNED (не реализован)
+
+---
+
 ## [2.1.0] - 2025-01-09
 
 ### Добавлено (STM32 Plug-and-Play)
