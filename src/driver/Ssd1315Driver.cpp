@@ -5,6 +5,7 @@
 
 #include "../../include/oled/internal/Ssd1315Driver.hpp"
 #include "../../include/oled/internal/PlatformDelay.hpp"
+#include <cstring>
 
 #if OLED_ENABLED
 
@@ -224,20 +225,22 @@ bool Ssd1315Driver::writeCommand(uint8_t c) {
 }
 
 bool Ssd1315Driver::writeCommands(const uint8_t* cmds, size_t len) {
-    // Отправляем каждую команду с control byte
-    for (size_t i = 0; i < len; ++i) {
-        if (!writeCommand(cmds[i])) {
-            return false;
-        }
-    }
-    return true;
+    // Отправляем все команды одним пакетом: control byte (0x00) + команды
+    if (len == 0) return true;
+    if (len > MAX_CMD_SIZE - 1) return false;  // Защита от переполнения буфера
+    
+    uint8_t buf[MAX_CMD_SIZE];
+    buf[0] = cmd::CONTROL_COMMAND;  // 0x00 - режим команд
+    memcpy(buf + 1, cmds, len);
+    
+    return i2c_->write(cfg_.i2cAddr7, buf, len + 1);
 }
 
 bool Ssd1315Driver::writeData(const uint8_t* data, size_t len) {
     // Используем пакетный режим: один control byte (Co=0, D/C#=1) + много данных
-    // Но Wire имеет ограничение буфера, поэтому разбиваем на чанки
+    // Размер чанка зависит от платформы (см. OledConfig.hpp)
     
-    constexpr size_t CHUNK_SIZE = 16; // Размер чанка данных
+    constexpr size_t CHUNK_SIZE = OLED_I2C_CHUNK_SIZE;
     
     for (size_t offset = 0; offset < len; offset += CHUNK_SIZE) {
         size_t chunkLen = (len - offset > CHUNK_SIZE) ? CHUNK_SIZE : (len - offset);
@@ -245,10 +248,7 @@ bool Ssd1315Driver::writeData(const uint8_t* data, size_t len) {
         // Буфер: control byte + данные
         uint8_t buf[CHUNK_SIZE + 1];
         buf[0] = cmd::CONTROL_DATA; // Co=0, D/C#=1 - режим данных
-        
-        for (size_t i = 0; i < chunkLen; ++i) {
-            buf[i + 1] = data[offset + i];
-        }
+        memcpy(buf + 1, data + offset, chunkLen);
         
         if (!i2c_->write(cfg_.i2cAddr7, buf, chunkLen + 1)) {
             return false;
