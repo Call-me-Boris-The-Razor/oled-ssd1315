@@ -1,47 +1,118 @@
-# API Reference — OLED SSD1315
+# API Reference — OLED SSD1315 v3.0
 
-Полное описание публичного API библиотеки.
+## Namespace
+
+Все типы находятся в namespace `oled`:
+
+```cpp
+#include <oled/OledSsd1315.hpp>
+
+oled::OledSsd1315* display;
+oled::OledConfig cfg;
+oled::OledResult result;
+```
 
 ---
 
-## Содержание
+## Типы
 
-- [Класс OledSsd1315](#класс-oledssd1315)
-- [Структура OledConfig](#структура-oledconfig)
-- [Перечисление OledResult](#перечисление-oledresult)
-- [Перечисление VccMode](#перечисление-vccmode)
+### OledResult
+
+```cpp
+enum class OledResult {
+    Ok,             // Успех
+    Disabled,       // Библиотека отключена флагом
+    I2cError,       // Ошибка I2C (NACK, timeout)
+    NotInitialized, // begin() не вызван или неуспешен
+    InvalidArg,     // Неверный аргумент
+    Busy,           // Занят (DMA в процессе)
+    Timeout,        // Таймаут операции
+    Unsupported     // Операция не поддерживается
+};
+```
+
+### VccMode
+
+```cpp
+enum class VccMode {
+    InternalChargePump,  // Встроенный charge pump (большинство модулей)
+    ExternalVcc          // Внешнее питание VCC
+};
+```
+
+### OledConfig
+
+```cpp
+struct OledConfig {
+    uint8_t  i2cAddr7 = 0x3C;      // 7-битный I2C адрес
+    uint16_t width    = 128;       // Ширина в пикселях
+    uint16_t height   = 64;        // Высота (32 или 64)
+    uint32_t i2cFreq  = 400000;    // Частота I2C (для Arduino)
+    VccMode  vccMode  = VccMode::InternalChargePump;
+    bool     flip180  = false;     // Поворот на 180°
+    ResetGpioCallback resetCallback = nullptr;  // Callback для reset
+};
+```
+
+### ResetGpioCallback
+
+```cpp
+using ResetGpioCallback = void (*)(bool high);
+```
+
+Callback для управления пином RST:
+- `high = true` — RST HIGH
+- `high = false` — RST LOW
 
 ---
 
 ## Класс OledSsd1315
 
-Основной класс для работы с OLED дисплеем.
-
 ### Конструкторы
 
+#### Arduino
+
 ```cpp
-OledSsd1315();
 explicit OledSsd1315(TwoWire& wire);
 ```
 
-| Параметр | Тип | Описание |
-|----------|-----|----------|
-| `wire` | `TwoWire&` | Ссылка на объект Wire (I2C) |
+**Параметры:**
+- `wire` — ссылка на объект Wire (I2C)
 
 **Пример:**
-
 ```cpp
 #include <Wire.h>
-#include <oled/OledSsd1315.hpp>
-
-OledSsd1315 oled(Wire);  // Использует стандартный Wire
+oled::OledSsd1315* display = new oled::OledSsd1315(Wire);
 ```
+
+#### STM32 HAL
+
+```cpp
+explicit OledSsd1315(I2C_HandleTypeDef* hi2c);
+```
+
+**Параметры:**
+- `hi2c` — указатель на HAL I2C handle
+
+**Пример:**
+```cpp
+extern I2C_HandleTypeDef hi2c1;
+oled::OledSsd1315* display = new oled::OledSsd1315(&hi2c1);
+```
+
+### Деструктор
+
+```cpp
+~OledSsd1315();
+```
+
+Освобождает внутренние ресурсы (pImpl).
 
 ---
 
-### Инициализация
+## Инициализация
 
-#### `begin()`
+### begin
 
 ```cpp
 OledResult begin(const OledConfig& cfg);
@@ -49,161 +120,105 @@ OledResult begin(const OledConfig& cfg);
 
 Инициализирует дисплей с заданной конфигурацией.
 
-| Параметр | Тип | Описание |
-|----------|-----|----------|
-| `cfg` | `const OledConfig&` | Конфигурация дисплея |
+**Параметры:**
+- `cfg` — структура конфигурации
 
-**Возвращает:** `OledResult`
-
-| Значение | Описание |
-|----------|----------|
-| `Ok` | Успешная инициализация |
-| `InvalidArg` | Неверные параметры конфигурации |
-| `I2cError` | Ошибка I2C связи |
-| `Disabled` | Библиотека отключена (флаг не задан) |
+**Возвращает:**
+- `OledResult::Ok` — успех
+- `OledResult::InvalidArg` — неверные параметры
+- `OledResult::I2cError` — ошибка I2C
 
 **Пример:**
-
 ```cpp
-void setup() {
-    Wire.begin();
-    
-    OledConfig cfg;
-    cfg.i2cAddr7 = 0x3C;
-    cfg.width = 128;
-    cfg.height = 64;
-    
-    OledResult result = oled.begin(cfg);
-    if (result != OledResult::Ok) {
-        Serial.println("Ошибка инициализации OLED!");
-    }
+oled::OledConfig cfg;
+cfg.i2cAddr7 = 0x3C;
+cfg.width = 128;
+cfg.height = 64;
+
+if (display->begin(cfg) != oled::OledResult::Ok) {
+    // Ошибка
 }
 ```
 
----
-
-#### `isReady()`
+### isReady
 
 ```cpp
 bool isReady() const;
 ```
 
-Проверяет, инициализирован ли дисплей.
+Проверяет готовность дисплея к работе.
 
-**Возвращает:** `true` если дисплей готов к работе.
-
----
-
-#### `resetState()`
+### resetState
 
 ```cpp
 void resetState();
 ```
 
-Сбрасывает внутреннее состояние. После вызова требуется повторный `begin()`.
+Сбрасывает внутреннее состояние (без деинициализации I2C).
 
 ---
 
-### Управление дисплеем
+## Управление дисплеем
 
-#### `setPower()`
+### setPower
 
 ```cpp
 OledResult setPower(bool on);
 ```
 
-Включает или выключает дисплей (режим сна).
+Включает/выключает дисплей (с корректным управлением charge pump).
 
-| Параметр | Тип | Описание |
-|----------|-----|----------|
-| `on` | `bool` | `true` — включить, `false` — выключить |
-
-**Примечание:** При выключении корректно отключается charge pump (если используется).
-
----
-
-#### `setContrast()`
+### setContrast
 
 ```cpp
 OledResult setContrast(uint8_t value);
 ```
 
-Устанавливает контрастность дисплея.
+Устанавливает контраст (0-255).
 
-| Параметр | Тип | Диапазон | Описание |
-|----------|-----|----------|----------|
-| `value` | `uint8_t` | 0–255 | Уровень контраста |
-
-**Типичные значения:**
-- `0x00` — минимальный контраст
-- `0x7F` — средний (по умолчанию)
-- `0xFF` — максимальный
-
----
-
-#### `invert()`
+### invert
 
 ```cpp
 OledResult invert(bool on);
 ```
 
-Инвертирует цвета на дисплее.
-
-| Параметр | Тип | Описание |
-|----------|-----|----------|
-| `on` | `bool` | `true` — инверсия включена |
+Инвертирует цвета дисплея.
 
 ---
 
-### Работа с буфером
+## Буфер
 
-#### `clear()`
+### clear
 
 ```cpp
 void clear();
 ```
 
-Очищает буфер (все пиксели выключены). **Не отправляет данные на дисплей** — требуется `flush()`.
+Очищает буфер (заполняет нулями).
 
----
-
-#### `fill()`
+### fill
 
 ```cpp
 void fill(bool color);
 ```
 
-Заполняет весь буфер.
+Заполняет буфер цветом:
+- `true` — белый (все пиксели включены)
+- `false` — чёрный
 
-| Параметр | Тип | Описание |
-|----------|-----|----------|
-| `color` | `bool` | `true` — все пиксели включены, `false` — выключены |
-
----
-
-#### `flush()`
+### flush
 
 ```cpp
 OledResult flush();
 ```
 
-Отправляет содержимое буфера на дисплей.
-
-**Важно:** Все операции рисования происходят в памяти. Чтобы увидеть изменения на дисплее, необходимо вызвать `flush()`.
-
-**Пример:**
-
-```cpp
-oled.clear();
-oled.print("Hello!");
-oled.flush();  // Теперь текст виден на дисплее
-```
+Отправляет буфер на дисплей (blocking).
 
 ---
 
-### Графические примитивы
+## Графические примитивы
 
-#### `pixel()`
+### pixel
 
 ```cpp
 void pixel(int x, int y, bool color);
@@ -211,15 +226,11 @@ void pixel(int x, int y, bool color);
 
 Устанавливает пиксель.
 
-| Параметр | Тип | Описание |
-|----------|-----|----------|
-| `x` | `int` | Координата X (0 = левый край) |
-| `y` | `int` | Координата Y (0 = верхний край) |
-| `color` | `bool` | `true` — включён, `false` — выключен |
+**Параметры:**
+- `x, y` — координаты (0-based)
+- `color` — true = белый, false = чёрный
 
----
-
-#### `line()`
+### line
 
 ```cpp
 void line(int x0, int y0, int x1, int y1, bool color);
@@ -227,31 +238,15 @@ void line(int x0, int y0, int x1, int y1, bool color);
 
 Рисует линию (алгоритм Брезенхэма).
 
-| Параметр | Тип | Описание |
-|----------|-----|----------|
-| `x0`, `y0` | `int` | Начальная точка |
-| `x1`, `y1` | `int` | Конечная точка |
-| `color` | `bool` | Цвет линии |
-
----
-
-#### `rect()`
+### rect
 
 ```cpp
 void rect(int x, int y, int w, int h, bool color);
 ```
 
-Рисует контур прямоугольника.
+Рисует прямоугольник (контур).
 
-| Параметр | Тип | Описание |
-|----------|-----|----------|
-| `x`, `y` | `int` | Левый верхний угол |
-| `w`, `h` | `int` | Ширина и высота |
-| `color` | `bool` | Цвет контура |
-
----
-
-#### `rectFill()`
+### rectFill
 
 ```cpp
 void rectFill(int x, int y, int w, int h, bool color);
@@ -261,35 +256,25 @@ void rectFill(int x, int y, int w, int h, bool color);
 
 ---
 
-### Текст
+## Текст
 
-#### `setCursor()`
+### setCursor
 
 ```cpp
 void setCursor(int x, int y);
 ```
 
-Устанавливает позицию курсора для вывода текста.
+Устанавливает позицию курсора для текста.
 
----
-
-#### `setTextSize()`
+### setTextSize
 
 ```cpp
 void setTextSize(uint8_t scale);
 ```
 
-Устанавливает масштаб текста.
+Устанавливает масштаб текста (1, 2, 3...).
 
-| Значение | Размер символа |
-|----------|----------------|
-| `1` | 5×7 пикселей (по умолчанию) |
-| `2` | 10×14 пикселей |
-| `3` | 15×21 пиксель |
-
----
-
-#### `setTextColor()`
+### setTextColor
 
 ```cpp
 void setTextColor(bool color);
@@ -297,61 +282,33 @@ void setTextColor(bool color);
 
 Устанавливает цвет текста.
 
-| Значение | Описание |
-|----------|----------|
-| `true` | Белый текст на чёрном фоне (по умолчанию) |
-| `false` | Чёрный текст (для инвертированных областей) |
-
----
-
-#### `print()`
+### print
 
 ```cpp
 void print(const char* str);
 ```
 
-Выводит строку с текущей позиции курсора.
+Выводит строку (поддерживает UTF-8 и кириллицу).
 
-**Поддерживает:**
-- ASCII символы (32–126)
-- Кириллицу (А–Я, а–я, Ё, ё)
-- UTF-8 кодировку
-- Автоматический перенос строки
-
-**Пример:**
-
-```cpp
-oled.setCursor(0, 0);
-oled.print("Привет мир!");
-oled.print("\nHello World!");
-```
-
----
-
-#### `printf()`
+### printf
 
 ```cpp
 void printf(const char* fmt, ...);
 ```
 
-Форматированный вывод (как стандартный `printf`).
-
-**Ограничение:** Максимальная длина результата — 128 символов.
+Форматированный вывод (как стандартный printf).
 
 **Пример:**
-
 ```cpp
-int temp = 25;
-float voltage = 3.3f;
-oled.printf("Temp: %d C\n", temp);
-oled.printf("Vcc: %.1f V", voltage);
+display->printf("Темп: %d°C", 25);
+display->printf("Напр: %.1fV", 3.3f);
 ```
 
 ---
 
-### Диагностика
+## Диагностика
 
-#### `getLastResult()`
+### getLastResult
 
 ```cpp
 OledResult getLastResult() const;
@@ -359,75 +316,43 @@ OledResult getLastResult() const;
 
 Возвращает результат последней операции.
 
----
-
-#### `getLastError()`
+### getLastError
 
 ```cpp
 const char* getLastError() const;
 ```
 
-Возвращает текстовое описание последней ошибки или `nullptr` если ошибок не было.
+Возвращает текстовое описание последней ошибки.
 
-**Пример:**
-
-```cpp
-if (display.begin(cfg) != OledResult::Ok) {
-    Serial.println(display.getLastError());
-}
-```
-
----
-
-#### `scanAddress()`
+### scanAddress
 
 ```cpp
 uint8_t scanAddress(uint8_t startAddr = 0x3C, uint8_t endAddr = 0x3D);
 ```
 
-Сканирует I2C шину для поиска адреса дисплея.
+Сканирует I2C шину в диапазоне адресов.
 
-| Параметр | Тип | По умолчанию | Описание |
-|----------|-----|--------------|----------|
-| `startAddr` | `uint8_t` | `0x3C` | Начальный адрес |
-| `endAddr` | `uint8_t` | `0x3D` | Конечный адрес |
-
-**Возвращает:** Найденный адрес или `0` если не найден.
-
-**Пример:**
-
-```cpp
-uint8_t addr = display.scanAddress();
-if (addr != 0) {
-    cfg.i2cAddr7 = addr;
-    display.begin(cfg);
-}
-```
+**Возвращает:**
+- Найденный адрес (7-bit)
+- 0 если устройство не найдено
 
 ---
 
-### STM32 HAL специфичные методы
+## STM32 HAL специфичные
 
-> Доступны только при компиляции с `-DOLED_PLATFORM_STM32HAL=1`
-
-#### `flushDMA()`
+### flushDMA
 
 ```cpp
 OledResult flushDMA();
 ```
 
-Отправляет буфер на дисплей через DMA (non-blocking).
+Начинает non-blocking DMA передачу буфера.
 
-**Требования:** Настроенный DMA для I2C TX в CubeMX.
+**Требования:**
+- Настроенный DMA для I2C TX в CubeMX
+- Callback `onDmaComplete()` в ISR
 
-**Возвращает:**
-- `OledResult::Ok` — передача начата
-- `OledResult::Busy` — предыдущая передача не завершена
-- `OledResult::I2cError` — ошибка DMA
-
----
-
-#### `isDMAComplete()`
+### isDMAComplete
 
 ```cpp
 bool isDMAComplete() const;
@@ -435,91 +360,64 @@ bool isDMAComplete() const;
 
 Проверяет завершение DMA передачи.
 
----
+### onDmaComplete
 
-#### `i2cBusRecovery()`
+```cpp
+void onDmaComplete();
+```
+
+Callback для вызова из `HAL_I2C_MasterTxCpltCallback`.
+
+**Пример:**
+```cpp
+// В stm32xx_it.c
+extern oled::OledSsd1315* display;
+
+void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c) {
+    display->onDmaComplete();
+}
+```
+
+### i2cBusRecovery
 
 ```cpp
 static bool i2cBusRecovery(void* gpioPort, uint16_t sclPin, uint16_t sdaPin);
 ```
 
-Восстанавливает I2C шину после зависания (SDA stuck LOW).
+Восстанавливает зависшую I2C шину.
 
-| Параметр | Тип | Описание |
-|----------|-----|----------|
-| `gpioPort` | `void*` | Указатель на GPIO порт (например `GPIOB`) |
-| `sclPin` | `uint16_t` | Пин SCL (например `GPIO_PIN_6`) |
-| `sdaPin` | `uint16_t` | Пин SDA (например `GPIO_PIN_7`) |
+**Параметры:**
+- `gpioPort` — GPIO порт (GPIOB и т.д.)
+- `sclPin` — GPIO_PIN_x для SCL
+- `sdaPin` — GPIO_PIN_x для SDA
 
-**Возвращает:** `true` если восстановление успешно.
-
----
-
-## Структура OledConfig
-
-Конфигурация дисплея.
-
+**Пример:**
 ```cpp
-struct OledConfig {
-    uint8_t  i2cAddr7 = 0x3C;
-    uint16_t width    = 128;
-    uint16_t height   = 64;
-    uint32_t i2cFreq  = 400000;
-    VccMode  vccMode  = VccMode::InternalChargePump;
-    bool     flip180  = false;
-    ResetGpioCallback resetCallback = nullptr;
-};
-```
-
-| Поле | Тип | По умолчанию | Описание |
-|------|-----|--------------|----------|
-| `i2cAddr7` | `uint8_t` | `0x3C` | 7-битный I2C адрес |
-| `width` | `uint16_t` | `128` | Ширина в пикселях |
-| `height` | `uint16_t` | `64` | Высота в пикселях (32 или 64) |
-| `i2cFreq` | `uint32_t` | `400000` | Частота I2C (Гц) |
-| `vccMode` | `VccMode` | `InternalChargePump` | Режим питания |
-| `flip180` | `bool` | `false` | Поворот на 180° |
-| `resetCallback` | `ResetGpioCallback` | `nullptr` | Callback для аппаратного reset (platform-agnostic) |
-
----
-
-## Перечисление OledResult
-
-Результаты операций.
-
-```cpp
-enum class OledResult {
-    Ok,             // Успешно
-    Disabled,       // Библиотека отключена
-    I2cError,       // Ошибка I2C
-    NotInitialized, // Не инициализировано
-    InvalidArg,     // Неверный аргумент
-    Unsupported     // Не поддерживается
-};
+bool recovered = oled::OledSsd1315::i2cBusRecovery(GPIOB, GPIO_PIN_6, GPIO_PIN_7);
+if (recovered) {
+    HAL_I2C_DeInit(&hi2c1);
+    HAL_I2C_Init(&hi2c1);
+}
 ```
 
 ---
 
-## Перечисление VccMode
+## Константы
 
-Режим питания дисплея.
+Определены в `OledConfig.hpp`:
 
-```cpp
-enum class VccMode {
-    InternalChargePump, // Внутренний DC-DC преобразователь
-    ExternalVcc         // Внешнее питание VCC
-};
-```
-
-| Режим | Описание |
-|-------|----------|
-| `InternalChargePump` | Используется встроенный charge pump. Подходит для большинства модулей. |
-| `ExternalVcc` | Внешний источник питания OLED панели. Для специальных конфигураций. |
+| Константа | Значение | Описание |
+|-----------|----------|----------|
+| `OLED_MAX_BUFFER_SIZE` | 1024 | Макс. размер буфера (128×64) |
+| `OLED_I2C_CHUNK_SIZE` | 128/32 | Размер I2C пакета |
+| `OLED_PRINTF_BUFFER_SIZE` | 64 | Буфер для printf |
 
 ---
 
-## См. также
+## Флаги компиляции
 
-- [Руководство по быстрому старту](QUICKSTART.md)
-- [Архитектура библиотеки](ARCHITECTURE.md)
-- [Примеры использования](EXAMPLES.md)
+| Флаг | Описание |
+|------|----------|
+| `OLED_SSD1315_ENABLE=1` | Включить библиотеку |
+| `OLED_PLATFORM_STM32HAL=1` | Использовать STM32 HAL |
+| `OLED_PLATFORM_ARDUINO=1` | Явно указать Arduino |

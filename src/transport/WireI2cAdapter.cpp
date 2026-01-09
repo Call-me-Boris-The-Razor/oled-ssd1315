@@ -3,7 +3,7 @@
  * @brief Реализация адаптера Arduino Wire
  */
 
-#include "../../include/oled/internal/WireI2cAdapter.hpp"
+#include "../../include/oled/adapters/WireI2cAdapter.hpp"
 
 #if OLED_ENABLED && OLED_USE_ARDUINO
 

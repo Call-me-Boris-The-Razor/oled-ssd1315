@@ -4,186 +4,132 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/).
 
+## [3.0.0] - 2025-01-10
+
+### ⚠️ Breaking Changes
+
+- **Архитектура полностью переработана** — Clean Architecture с разделением на слои
+- **pImpl pattern** — HAL-типы скрыты от публичного API
+- **Namespace обязателен** — используйте `oled::OledSsd1315` вместо `OledSsd1315`
+- **Указатели вместо объектов** — рекомендуется `new oled::OledSsd1315(...)` для STM32
+
+### Добавлено
+
+- **Архитектурные слои:**
+  - `ports/` — интерфейсы (II2c)
+  - `adapters/` — платформенные реализации (WireI2cAdapter, Stm32HalI2cAdapter)
+  - `domain/` — чистая бизнес-логика (Gfx, Ssd1315Driver)
+  
+- **pImpl Idiom:**
+  - `OledSsd1315Impl.hpp` — детали реализации скрыты
+  - `OledSsd1315Fwd.hpp` — forward declarations для минимизации зависимостей
+  - HAL-типы не утекают в публичные заголовки
+
+- **Code Quality:**
+  - `.clang-format` — автоматическое форматирование (Google-based, 4 spaces)
+  - `.clang-tidy` — статический анализ (bugprone, modernize, performance)
+
+- **Unit Testing:**
+  - `tests/` — структура для unit-тестов
+  - `tests/mocks/MockI2c.hpp` — mock-реализация II2c
+  - `tests/test_gfx.cpp` — тесты графического слоя
+  - `tests/test_driver.cpp` — тесты драйвера
+  - `tests/CMakeLists.txt` — сборка тестов с CMake + ASan/UBSan
+
+- **Примеры:**
+  - `examples/stm32h743_test/` — тестовый проект для STM32H743
+
+- **Именованные константы:**
+  - `kI2cRecoveryClockPulses` — количество clock pulses для recovery
+  - `kI2cBitBangDelayLoops` — задержки для bit-banging
+  - `kI2cDataCommandPrefix` — префикс команды данных (0x40)
+
+### Изменено
+
+- **Структура include:**
+  ```text
+  include/oled/
+  ├── ports/II2c.hpp              (было: internal/)
+  ├── adapters/WireI2cAdapter.hpp (было: internal/)
+  ├── adapters/Stm32HalI2cAdapter.hpp
+  ├── domain/Gfx.hpp              (было: internal/)
+  ├── domain/Ssd1315Driver.hpp    (было: internal/)
+  └── domain/Ssd1315Commands.hpp
+  ```
+
+- **Убраны using declarations из заголовков** — соответствие стандартам C++
+
+### Удалено
+
+- `include/oled/internal/` — заменено на `ports/`, `adapters/`, `domain/`
+- Глобальные `using oled::*` из публичных заголовков
+
+---
+
 ## [2.1.2] - 2025-01-09
 
 ### Исправлено
 
-- **WireI2cAdapter guards** — добавлена проверка `OLED_USE_ARDUINO` для предотвращения включения `<Wire.h>` на STM32HAL
-- **Build script** — добавлен `srcFilter` для исключения `WireI2cAdapter.cpp` при сборке под STM32HAL
+- **WireI2cAdapter guards** — добавлена проверка `OLED_USE_ARDUINO`
+- **Build script** — добавлен `srcFilter` для исключения файлов
 
 ---
 
 ## [2.1.1] - 2025-01-09
 
-### Исправлено (Audit Fixes)
+### Исправлено
 
-- **`scanAddress()`** — исправлена работа на Arduino (добавлен метод `probe()` в `II2c`)
-- **DMA callback** — добавлен `onDmaComplete()` для сброса `dmaInProgress_`
-- **README** — исправлена опечатка `oled` → `display`, обновлён badge версии
-- **`writeCommands()`** — команды отправляются одним I2C пакетом (было N пакетов)
-- **`writeData()`** — использует `OLED_I2C_CHUNK_SIZE` вместо хардкода `16`
-- **Символ `~`** — исправлен глиф в шрифте (был стрелка)
-- **WireI2cAdapter** — убран лишний `-1` для адреса в буфере
+- `scanAddress()` — исправлена работа на Arduino
+- DMA callback — добавлен `onDmaComplete()`
+- `writeCommands()` — команды одним I2C пакетом
+- Символ `~` — исправлен глиф
 
 ### Добавлено
 
-- **`II2c::probe()`** — метод для проверки наличия устройства на шине
-- **`onDmaComplete()`** — callback для HAL_I2C_MasterTxCpltCallback
-- **`.editorconfig`** — настройки стиля кода
-- **Документация DMA** — ограничения static буфера
-
-### Изменено
-
-- **`lastResult_`/`lastErrorMsg_`** — заполняются во всех методах с `OledResult`
-- **ESP-IDF** — помечен как PLANNED (не реализован)
+- `II2c::probe()` — проверка устройства на шине
+- `.editorconfig` — настройки стиля
 
 ---
 
 ## [2.1.0] - 2025-01-09
 
-### Добавлено (STM32 Plug-and-Play)
+### Добавлено
 
-- **Диагностика ошибок**
-  - `getLastResult()` — получить код последней ошибки
-  - `getLastError()` — текстовое описание ошибки
-- **I2C сканер** — `scanAddress()` для автоматического поиска адреса
-- **DMA поддержка (STM32)** — non-blocking передача буфера
-  - `flushDMA()` — начать DMA передачу
-  - `isDMAComplete()` — проверить завершение
-- **I2C Bus Recovery (STM32)** — `i2cBusRecovery()` для восстановления зависшей шины
-- **Увеличенный CHUNK_SIZE** — 128 байт для STM32 HAL (было 16)
-- **Расширенная документация CubeMX** — пошаговая настройка для H7 серии
-
-### Изменено
-
-- **`OledResult`** — добавлены `Busy` и `Timeout`
-- **`OLED_I2C_CHUNK_SIZE`** — платформо-зависимый размер чанка
-
-### Новые методы API
-
-```cpp
-// Диагностика
-OledResult getLastResult() const;
-const char* getLastError() const;
-uint8_t scanAddress(uint8_t startAddr = 0x3C, uint8_t endAddr = 0x3D);
-
-// STM32 HAL только
-OledResult flushDMA();
-bool isDMAComplete() const;
-static bool i2cBusRecovery(void* gpioPort, uint16_t sclPin, uint16_t sdaPin);
-```
+- Диагностика: `getLastResult()`, `getLastError()`
+- I2C сканер: `scanAddress()`
+- DMA поддержка: `flushDMA()`, `isDMAComplete()`
+- I2C Bus Recovery: `i2cBusRecovery()`
 
 ---
 
 ## [2.0.0] - 2025-01-09
 
-### Добавлено (Multi-Platform Support)
+### Добавлено
 
-- **Поддержка STM32 HAL I2C** — работает с `stm32cube` framework
-- **Platform-agnostic архитектура** — единый API для Arduino и STM32
-- **Автоопределение платформы** — через `ARDUINO` или явные флаги
-- **Новый адаптер `Stm32HalI2cAdapter`** — для `I2C_HandleTypeDef*`
-- **`PlatformDelay.hpp`** — унифицированные задержки для всех платформ
-- **`resetCallback`** — platform-agnostic аппаратный reset вместо GPIO номера
-- **Скрипт `platformio_build.py`** — автоматический выбор адаптера
-- **Примеры для STM32 HAL** — `examples/stm32hal_basic/`
-- **Документация `STM32_HAL.md`** — полное руководство
-
-### Изменено
-
-- **`OledConfig.resetGpio`** заменён на **`OledConfig.resetCallback`**
-- **`library.json`** — добавлен `stm32cube` framework
-- **Убрана зависимость от Arduino.h** в драйвере
-- **Условная компиляция конструкторов** — `TwoWire&` или `I2C_HandleTypeDef*`
-
-### Флаги компиляции
-
-| Платформа | Флаги |
-|-----------|-------|
-| Arduino | `-DOLED_SSD1315_ENABLE=1` (автодетекция) |
-| STM32 HAL | `-DOLED_SSD1315_ENABLE=1 -DOLED_PLATFORM_STM32HAL=1` |
-
-### Новая структура
-
-```text
-include/oled/internal/
-├── PlatformDelay.hpp      (NEW)
-├── Stm32HalI2cAdapter.hpp (NEW)
-├── WireI2cAdapter.hpp
-├── ...
-
-scripts/
-└── platformio_build.py    (NEW)
-
-examples/
-├── basic/                 (Arduino)
-└── stm32hal_basic/        (NEW: STM32 HAL)
-```
+- Поддержка STM32 HAL I2C
+- Platform-agnostic архитектура
+- `Stm32HalI2cAdapter`
+- `PlatformDelay.hpp`
+- Скрипт `platformio_build.py`
 
 ---
 
 ## [1.1.0] - 2025-01-09
 
-### Изменено (Рефакторинг по аудиту)
+### Изменено
 
-- **Убрано динамическое выделение памяти** — `new`/`delete` заменены на статические поля
-- **Добавлены `init()` методы** — отложенная инициализация для WireI2cAdapter, Ssd1315Driver, Gfx
-- **Перенос internal headers** — внутренние заголовки в `include/oled/internal/`
-- **Единый `OledConfig.hpp`** — централизованный флаг `OLED_ENABLED` и константы
-- **Унификация условной компиляции** — все файлы используют `#if OLED_ENABLED`
-- **Уменьшена задержка инициализации** — `delay(50)` → `delay(20)` без reset GPIO
-- **Исправлены signed/unsigned warnings** — добавлены explicit casts
+- Убрано динамическое выделение памяти
+- Добавлены `init()` методы
+- Перенос internal headers
 
-### Структура файлов
-
-```text
-include/oled/
-├── OledConfig.hpp      (NEW) Единая конфигурация
-├── OledTypes.hpp
-├── OledSsd1315.hpp
-└── internal/           (NEW) Внутренние компоненты
-    ├── II2c.hpp
-    ├── WireI2cAdapter.hpp
-    ├── Ssd1315Driver.hpp
-    ├── Ssd1315Commands.hpp
-    └── Gfx.hpp
-```
+---
 
 ## [1.0.0] - 2024-01-09
 
 ### Добавлено
 
-- Первый релиз библиотеки
-- Поддержка контроллера SSD1315 (совместим с SSD1306)
-- Размеры дисплея: 128×64, 128×32
-- I2C транспорт через Arduino Wire
-- Абстракция II2c для кастомных драйверов
-- Драйвер SSD1315 с полной инициализацией
-- Horizontal Addressing Mode для эффективной заливки буфера
-- Charge Pump управление (internal/external VCC)
-- Framebuffer с операциями:
-  - `clear()` / `fill()`
-  - `pixel()` — установка пикселя
-  - `line()` — линия (алгоритм Брезенхэма)
-  - `rect()` / `rectFill()` — прямоугольники
-- Текстовый вывод:
-  - Встроенный шрифт 5×7 (ASCII 32-126)
-  - **Кириллица** А-Я, а-я, Ё, ё (тот же размер 5×7)
-  - Полная поддержка UTF-8 строк
-  - Масштабирование текста
-  - `print()` и `printf()`
-- Управление дисплеем:
-  - `setPower()` — вкл/выкл с корректным управлением pump
-  - `setContrast()` — контраст 0-255
-  - `invert()` — инверсия цветов
-- Условное включение через флаг `OLED_SSD1315_ENABLE`
-- Заглушки при выключенной библиотеке
-- Пример использования в `examples/basic/`
-- Документация README.md
-
-### Технические детали
-
-- C++17 (минимум C++14)
-- Без динамического выделения в рантайме (буфер статический)
-- Все команды SSD1315 в constexpr
-- Модульная архитектура: Transport → Driver → GFX → Facade
+- Первый релиз
+- SSD1315/SSD1306 поддержка
+- I2C через Arduino Wire
+- Framebuffer с графикой
+- UTF-8 текст с кириллицей

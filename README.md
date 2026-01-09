@@ -4,7 +4,7 @@
 
 **Лёгкая библиотека для OLED дисплеев SSD1315/SSD1306**
 
-[![Версия](https://img.shields.io/badge/версия-2.1.2-blue.svg)](CHANGELOG.md)
+[![Версия](https://img.shields.io/badge/версия-3.0.0-blue.svg)](CHANGELOG.md)
 [![Лицензия](https://img.shields.io/badge/лицензия-MIT-green.svg)](LICENSE)
 [![PlatformIO](https://img.shields.io/badge/PlatformIO-совместим-orange.svg)](https://platformio.org)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org)
@@ -23,26 +23,77 @@
 ## 📋 Содержание
 
 - [Особенности](#-особенности)
-- [Поддерживаемое оборудование](#-поддерживаемое-оборудование)
+- [Архитектура v3.0](#-архитектура-v30)
 - [Установка](#-установка)
 - [Быстрый старт](#-быстрый-старт)
 - [API Reference](#-api-reference)
-- [Примеры использования](#-примеры-использования)
-- [Архитектура](#-архитектура)
+- [Тестирование](#-тестирование)
 - [Документация](#-документация)
-- [Лицензия](#-лицензия)
 
 ---
 
 ## ✨ Особенности
 
 - **📟 Multi-Platform** — Arduino Wire и STM32 HAL I2C
-- **Framebuffer** — все операции рисования в памяти, затем `flush()` на дисплей
+- **🏗️ Clean Architecture** — ports/adapters/domain разделение слоёв
+- **🔒 pImpl Pattern** — HAL-типы скрыты от публичного API
+- **🧪 Unit Tests** — тесты с MockI2c, CMake поддержка
+- **📝 Code Quality** — `.clang-format`, `.clang-tidy` конфигурации
+- **Framebuffer** — все операции в памяти, затем `flush()` на дисплей
 - **Примитивы** — пиксель, линия, прямоугольник (контур и заливка)
-- **Текст** — встроенный шрифт 5×7, **поддержка русского языка (UTF-8)**, масштабирование
-- **Условное включение** — если флаг не задан, библиотека компилируется как заглушки
-- **Без внешних зависимостей** — не требует тяжёлых GFX библиотек
-- **Модульная архитектура** — Transport → Driver → GFX → Facade
+- **Текст** — шрифт 5×7, **поддержка русского языка (UTF-8)**, масштабирование
+- **Условное включение** — заглушки при выключенной библиотеке
+
+## 🏗️ Архитектура v3.0
+
+```text
+┌─────────────────────────────────────────────────┐
+│              OledSsd1315 (Facade)               │  ← Публичный API
+│                   + pImpl                       │
+├─────────────────────────────────────────────────┤
+│                    domain/                      │  ← Чистая логика
+│              Gfx, Ssd1315Driver                 │
+├─────────────────────────────────────────────────┤
+│                    ports/                       │  ← Интерфейсы
+│                     II2c                        │
+├─────────────────────────────────────────────────┤
+│                   adapters/                     │  ← Реализации
+│       WireI2cAdapter, Stm32HalI2cAdapter        │
+└─────────────────────────────────────────────────┘
+```
+
+### Структура файлов
+
+```text
+lib/oled_ssd1315/
+├── include/oled/
+│   ├── OledSsd1315.hpp         # Публичный API (Facade)
+│   ├── OledSsd1315Impl.hpp     # pImpl детали реализации
+│   ├── OledSsd1315Fwd.hpp      # Forward declarations
+│   ├── OledConfig.hpp          # Конфигурация
+│   ├── OledTypes.hpp           # Типы и enum'ы
+│   ├── ports/                  # Интерфейсы (DIP)
+│   │   └── II2c.hpp
+│   ├── adapters/               # Платформенные реализации
+│   │   ├── WireI2cAdapter.hpp
+│   │   ├── Stm32HalI2cAdapter.hpp
+│   │   └── PlatformDelay.hpp
+│   └── domain/                 # Бизнес-логика (чистая)
+│       ├── Gfx.hpp
+│       ├── Ssd1315Driver.hpp
+│       └── Ssd1315Commands.hpp
+├── src/
+├── tests/                      # Unit-тесты
+│   ├── CMakeLists.txt
+│   ├── mocks/MockI2c.hpp
+│   ├── test_gfx.cpp
+│   └── test_driver.cpp
+├── examples/
+│   └── stm32h743_test/         # Тест для STM32H743
+├── .clang-format               # Автоформатирование
+├── .clang-tidy                 # Статический анализ
+└── library.json
+```
 
 ## 💻 Поддерживаемые платформы
 
@@ -53,62 +104,27 @@
 | STM32 (Arduino) | Arduino | Автоматически |
 | **STM32 (HAL)** | stm32cube | `-DOLED_PLATFORM_STM32HAL=1` |
 
-## Поддерживаемые дисплеи
-
-| Контроллер | Размеры | Интерфейс |
-|------------|---------|-----------|
-| SSD1315    | 128×64, 128×32 | I2C |
-| SSD1306    | 128×64, 128×32 | I2C (совместим) |
-
-## Подключение
-
-### I2C адреса
-
-| 7-битный адрес | 8-битный (write) | Примечание |
-|----------------|------------------|------------|
-| **0x3C** | 0x78 | Обычно по умолчанию |
-| **0x3D** | 0x7A | Альтернативный |
-
-> **Важно:** В коде используется **7-битный адрес** (0x3C или 0x3D).
-> На некоторых модулях указан 8-битный адрес (0x78/0x7A) — это то же самое.
-
-### Типичная схема подключения
-
-```
-OLED       MCU
-----       ---
-VCC   -->  3.3V
-GND   -->  GND
-SCL   -->  I2C Clock (GPIO22 на ESP32)
-SDA   -->  I2C Data  (GPIO21 на ESP32)
-```
-
-## Установка
+## 🔧 Установка
 
 ### PlatformIO
 
-1. Скопируйте папку `oled_ssd1315` в директорию `lib/` вашего проекта
-2. Добавьте флаг включения в `platformio.ini`:
-
 ```ini
+[env:myboard]
+lib_deps = 
+    oled_ssd1315
+
 build_flags = 
     -DOLED_SSD1315_ENABLE=1
+    ; Для STM32 HAL:
+    ; -DOLED_PLATFORM_STM32HAL=1
 ```
 
-### Флаг включения/выключения
+### Локальная установка
 
-| Состояние | Флаг | Поведение |
-|-----------|------|-----------|
-| **Включено** | `-DOLED_SSD1315_ENABLE=1` | Полная функциональность |
-| **Выключено** | флаг не задан | Заглушки, всё возвращает `Disabled` |
+1. Скопируйте `oled_ssd1315` в `lib/`
+2. Добавьте флаг `-DOLED_SSD1315_ENABLE=1`
 
-При выключенной библиотеке:
-- Код компилируется без ошибок
-- Все методы существуют (заглушки)
-- Возвращается `OledResult::Disabled`
-- Никаких затрат памяти на драйвер/буфер
-
-## Быстрый старт
+## 🚀 Быстрый старт
 
 ### Arduino
 
@@ -116,23 +132,25 @@ build_flags =
 #include <Wire.h>
 #include <oled/OledSsd1315.hpp>
 
-OledSsd1315 display(Wire);
+oled::OledSsd1315* display;
 
 void setup() {
     Wire.begin();
     
-    OledConfig cfg;
+    display = new oled::OledSsd1315(Wire);
+    
+    oled::OledConfig cfg;
     cfg.i2cAddr7 = 0x3C;
     cfg.width = 128;
     cfg.height = 64;
     
-    if (display.begin(cfg) != OledResult::Ok) {
+    if (display->begin(cfg) != oled::OledResult::Ok) {
         return;
     }
     
-    display.clear();
-    display.print("Hello Arduino!");
-    display.flush();
+    display->clear();
+    display->print("Hello Arduino!");
+    display->flush();
 }
 
 void loop() {}
@@ -141,35 +159,32 @@ void loop() {}
 ### STM32 HAL
 
 ```cpp
-#include "main.h"
+#include "stm32h7xx_hal.h"
 #include <oled/OledSsd1315.hpp>
 
-extern I2C_HandleTypeDef hi2c1;
-OledSsd1315 display(&hi2c1);
+I2C_HandleTypeDef hi2c1;
+oled::OledSsd1315* display;
 
-int main(void) {
+int main() {
     HAL_Init();
     SystemClock_Config();
     MX_I2C1_Init();
     
-    OledConfig cfg;
+    display = new oled::OledSsd1315(&hi2c1);
+    
+    oled::OledConfig cfg;
     cfg.i2cAddr7 = 0x3C;
     
-    if (display.begin(cfg) != OledResult::Ok) {
-        Error_Handler();
-    }
-    
-    display.clear();
-    display.print("Привет STM32!");
-    display.flush();
+    display->begin(cfg);
+    display->clear();
+    display->print("Привет STM32!");
+    display->flush();
     
     while (1) {}
 }
 ```
 
-> 📖 Подробнее: [docs/STM32_HAL.md](docs/STM32_HAL.md)
-
-## API Reference
+## 📖 API Reference
 
 ### Результаты операций
 
@@ -180,26 +195,8 @@ enum class OledResult {
     I2cError,       // Ошибка I2C
     NotInitialized, // Не инициализирован
     InvalidArg,     // Неверный аргумент
-    Unsupported     // Не поддерживается
-};
-```
-
-### Конфигурация
-
-```cpp
-struct OledConfig {
-    uint8_t  i2cAddr7 = 0x3C;      // 7-битный адрес
-    uint16_t width    = 128;       // Ширина
-    uint16_t height   = 64;        // Высота (64 или 32)
-    uint32_t i2cFreq  = 400000;    // Частота I2C
-    VccMode  vccMode  = VccMode::InternalChargePump;
-    bool     flip180  = false;     // Поворот на 180°
-    ResetGpioCallback resetCallback = nullptr;  // Callback для reset
-};
-
-enum class VccMode {
-    InternalChargePump,  // Встроенный charge pump (большинство модулей)
-    ExternalVcc          // Внешнее питание VCC
+    Busy,           // Занят (DMA)
+    Timeout         // Таймаут
 };
 ```
 
@@ -209,156 +206,53 @@ enum class VccMode {
 |-------|----------|
 | `begin(cfg)` | Инициализация дисплея |
 | `isReady()` | Проверка готовности |
-| `resetState()` | Сброс состояния |
-| `setPower(on)` | Вкл/выкл дисплей |
-| `setContrast(value)` | Контраст 0-255 |
-| `invert(on)` | Инверсия цветов |
-
-### Буфер
-
-| Метод | Описание |
-|-------|----------|
 | `clear()` | Очистить буфер |
-| `fill(color)` | Заполнить буфер |
 | `flush()` | Отправить на дисплей |
+| `print(str)` | Вывод строки |
+| `printf(fmt, ...)` | Форматированный вывод |
 
 ### Примитивы
 
 | Метод | Описание |
 |-------|----------|
 | `pixel(x, y, color)` | Пиксель |
-| `line(x0, y0, x1, y1, color)` | Линия (Брезенхэм) |
-| `rect(x, y, w, h, color)` | Прямоугольник (контур) |
+| `line(x0, y0, x1, y1, color)` | Линия |
+| `rect(x, y, w, h, color)` | Прямоугольник |
 | `rectFill(x, y, w, h, color)` | Залитый прямоугольник |
 
-### Текст
+### STM32 HAL специфичные
 
 | Метод | Описание |
 |-------|----------|
-| `setCursor(x, y)` | Позиция курсора |
-| `setTextSize(scale)` | Масштаб (1, 2, 3...) |
-| `setTextColor(color)` | Цвет текста |
-| `print(str)` | Вывод строки |
-| `printf(fmt, ...)` | Форматированный вывод |
+| `flushDMA()` | Non-blocking передача |
+| `isDMAComplete()` | Проверка завершения DMA |
+| `i2cBusRecovery()` | Восстановление I2C шины |
 
-## Технические детали
+## 🧪 Тестирование
 
-### Режим адресации памяти
-
-Библиотека использует **Horizontal Addressing Mode** (команда 0x20, параметр 0x00).
-Это позволяет линейно заливать весь буфер без переключения страниц.
-
-### Charge Pump
-
-Для модулей с внутренним charge pump:
-- Команда 0x8D, параметр 0x14 (enable)
-- При `setPower(false)` — отключается (0x8D, 0x10)
-
-### Размер буфера
-
-- 128×64: 1024 байта
-- 128×32: 512 байт
-
-Буфер статический, выделяется внутри класса `OledSsd1315`.
-
-## Структура файлов
-
-```text
-lib/oled_ssd1315/
-├── include/oled/
-│   ├── OledConfig.hpp          # Конфигурация и автодетекция платформы
-│   ├── OledTypes.hpp           # Типы и enum'ы
-│   ├── OledSsd1315.hpp         # Главный заголовок
-│   └── internal/
-│       ├── II2c.hpp            # Интерфейс I2C
-│       ├── WireI2cAdapter.hpp  # Arduino Wire
-│       ├── Stm32HalI2cAdapter.hpp  # STM32 HAL (NEW)
-│       ├── PlatformDelay.hpp   # Platform-agnostic delay (NEW)
-│       ├── Ssd1315Driver.hpp
-│       ├── Ssd1315Commands.hpp
-│       └── Gfx.hpp
-├── scripts/
-│   └── platformio_build.py     # Автовыбор платформы (NEW)
-├── src/
-│   ├── OledSsd1315.cpp         # Facade реализация
-│   ├── driver/
-│   │   └── Ssd1315Driver.cpp
-│   ├── gfx/
-│   │   ├── Font5x7.hpp
-│   │   ├── FontCyrillic5x7.hpp
-│   │   └── Gfx.cpp
-│   └── transport/
-│       └── WireI2cAdapter.cpp
-├── examples/basic/
-│   ├── platformio.ini
-│   └── src/main.cpp
-├── library.json
-├── README.md
-├── CHANGELOG.md
-└── LICENSE
+```bash
+cd tests
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+cmake --build .
+ctest --output-on-failure
 ```
 
-## Поддержка русского языка
-
-Библиотека поддерживает **UTF-8** строки с русскими символами:
-
-```cpp
-display.print("Привет мир!");
-display.print("Hello World!");
-display.printf("Темп: %d°C", temp);
-```
-
-Поддерживаемые символы:
-- ASCII 32-126 (латиница, цифры, знаки)
-- Кириллица А-Я, а-я, Ё, ё
-
-Все символы имеют одинаковый размер 5×7 пикселей.
-
-## Ограничения
-
-- Только I2C (SPI не поддерживается)
-- Максимальный размер: 128×64
-- Буфер Wire ограничен (~32 байта), данные отправляются чанками
+Тесты включают:
+- `test_gfx` — графический слой
+- `test_driver` — драйвер SSD1315 с MockI2c
 
 ## 📚 Документация
 
-Полная документация находится в папке [`docs/`](docs/):
+- [Архитектура](docs/ARCHITECTURE.md)
+- [API Reference](docs/API.md)
+- [STM32 HAL Guide](docs/STM32_HAL.md)
+- [Быстрый старт](docs/QUICKSTART.md)
+- [Команды SSD1315](docs/SSD1315_COMMANDS.md)
 
-| Документ | Описание |
-|----------|----------|
-| [API.md](docs/API.md) | Полное описание API |
-| [QUICKSTART.md](docs/QUICKSTART.md) | Быстрый старт за 5 минут |
-| [EXAMPLES.md](docs/EXAMPLES.md) | Примеры использования |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архитектура библиотеки |
-| [SSD1315_COMMANDS.md](docs/SSD1315_COMMANDS.md) | Справочник команд контроллера |
+## 📜 Лицензия
 
-## 🏗️ Архитектура
-
-```text
-┌─────────────────────────────────────────────────┐
-│                 OledSsd1315                     │  ← Facade
-├─────────────────────────────────────────────────┤
-│                     Gfx                         │  ← Graphics
-├─────────────────────────────────────────────────┤
-│                Ssd1315Driver                    │  ← Driver
-├─────────────────────────────────────────────────┤
-│              WireI2cAdapter                     │  ← Transport
-└─────────────────────────────────────────────────┘
-```
-
-Подробнее: [ARCHITECTURE.md](docs/ARCHITECTURE.md)
-
-## 🤝 Вклад в проект
-
-1. Форкните репозиторий
-2. Создайте ветку для фичи (`git checkout -b feature/amazing-feature`)
-3. Закоммитьте изменения (`git commit -m 'Add amazing feature'`)
-4. Запушьте в ветку (`git push origin feature/amazing-feature`)
-5. Откройте Pull Request
-
-## 📄 Лицензия
-
-Распространяется под лицензией MIT. См. файл [LICENSE](LICENSE) для подробностей.
+MIT License. См. [LICENSE](LICENSE).
 
 ---
 

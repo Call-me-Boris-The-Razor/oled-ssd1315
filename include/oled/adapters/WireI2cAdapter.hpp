@@ -6,7 +6,7 @@
 #ifndef OLED_WIRE_I2C_ADAPTER_HPP
 #define OLED_WIRE_I2C_ADAPTER_HPP
 
-#include "II2c.hpp"
+#include "../ports/II2c.hpp"
 #include "../OledConfig.hpp"
 
 #if OLED_ENABLED && OLED_USE_ARDUINO

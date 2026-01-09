@@ -1,0 +1,97 @@
+# Конфигурация clang-format для OLED SSD1315
+# Стандарт: C++17, embedded-friendly стиль
+
+Language: Cpp
+BasedOnStyle: Google
+
+# Отступы
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+
+# Ширина строки
+ColumnLimit: 100
+
+# Выравнивание
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignOperands: true
+AlignTrailingComments: true
+
+# Скобки
+BreakBeforeBraces: Attach
+Cpp11BracedListStyle: true
+
+# Пробелы
+SpaceAfterCStyleCast: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInContainerLiterals: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
+# Переносы
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: true
+BinPackParameters: true
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeColon
+BreakStringLiterals: true
+
+# Включения
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Собственные заголовки проекта
+  - Regex: '^"oled/'
+    Priority: 1
+  # Внутренние заголовки
+  - Regex: '^"'
+    Priority: 2
+  # Системные заголовки C++
+  - Regex: '^<[a-z_]+>'
+    Priority: 3
+  # Внешние библиотеки
+  - Regex: '^<'
+    Priority: 4
+SortIncludes: true
+
+# Указатели и ссылки
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+# Комментарии
+ReflowComments: true
+
+# Прочее
+CompactNamespaces: false
+FixNamespaceComments: true
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: None
+SortUsingDeclarations: true
+
+# Штрафы за нарушения
+PenaltyBreakAssignment: 2
+PenaltyBreakBeforeFirstCallParameter: 1
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakString: 1000
+PenaltyExcessCharacter: 1000000
+PenaltyReturnTypeOnItsOwnLine: 200

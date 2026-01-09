@@ -1,7 +1,7 @@
 /**
  * @file Stm32HalI2cAdapter.hpp
  * @brief STM32 HAL I2C адаптер для библиотеки OLED SSD1315
- * 
+ *
  * Использование:
  * @code
  * I2C_HandleTypeDef hi2c1;
@@ -14,7 +14,7 @@
 #define OLED_STM32HAL_I2C_ADAPTER_HPP
 
 #include "../OledConfig.hpp"
-#include "II2c.hpp"
+#include "../ports/II2c.hpp"
 
 #if OLED_USE_STM32HAL
 
@@ -49,7 +49,7 @@ public:
      * @brief Конструктор по умолчанию
      */
     Stm32HalI2cAdapter() : hi2c_(nullptr), timeout_(100) {}
-    
+
     /**
      * @brief Инициализировать адаптер
      * @param hi2c Указатель на I2C_HandleTypeDef
@@ -59,14 +59,14 @@ public:
         hi2c_ = hi2c;
         timeout_ = timeout;
     }
-    
+
     /**
      * @brief Проверить инициализацию
      */
     bool isInitialized() const {
         return hi2c_ != nullptr;
     }
-    
+
     /**
      * @brief Отправить данные по I2C
      * @param addr7 7-битный адрес устройства
@@ -78,10 +78,10 @@ public:
         if (!hi2c_ || !data || len == 0) {
             return false;
         }
-        
+
         // HAL требует 8-битный адрес (7-бит << 1)
         uint16_t addr8 = static_cast<uint16_t>(addr7) << 1;
-        
+
         HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(
             hi2c_,
             addr8,
@@ -89,10 +89,10 @@ public:
             static_cast<uint16_t>(len),
             timeout_
         );
-        
+
         return (status == HAL_OK);
     }
-    
+
     /**
      * @brief Проверить наличие устройства на шине
      * @param addr7 7-битный адрес устройства
@@ -100,9 +100,9 @@ public:
      */
     bool probe(uint8_t addr7) override {
         if (!hi2c_) return false;
-        
+
         uint16_t addr8 = static_cast<uint16_t>(addr7) << 1;
-        
+
         // HAL_I2C_IsDeviceReady проверяет наличие устройства
         HAL_StatusTypeDef status = HAL_I2C_IsDeviceReady(
             hi2c_,
@@ -110,10 +110,10 @@ public:
             1,       // Trials
             timeout_
         );
-        
+
         return (status == HAL_OK);
     }
-    
+
 private:
     I2C_HandleTypeDef* hi2c_;
     uint32_t timeout_;

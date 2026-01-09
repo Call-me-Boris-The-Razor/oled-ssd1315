@@ -6,7 +6,7 @@
 #ifndef OLED_SSD1315_DRIVER_HPP
 #define OLED_SSD1315_DRIVER_HPP
 
-#include "II2c.hpp"
+#include "../ports/II2c.hpp"
 #include "../OledTypes.hpp"
 #include "../OledConfig.hpp"
 #include "Ssd1315Commands.hpp"
@@ -17,7 +17,7 @@ namespace oled {
 
 /**
  * @brief Драйвер SSD1315
- * 
+ *
  * Управляет инициализацией, командами и передачей данных в GDDRAM.
  * Использует Horizontal Addressing Mode для линейной заливки буфера.
  */
@@ -25,12 +25,12 @@ class Ssd1315Driver {
 public:
     // Максимальный размер команды (control byte + данные)
     static constexpr size_t MAX_CMD_SIZE = 8;
-    
+
     /**
      * @brief Конструктор по умолчанию (для статического размещения)
      */
     Ssd1315Driver() : i2c_(nullptr) {}
-    
+
     /**
      * @brief Инициализировать драйвер с I2C транспортом и конфигурацией
      * @param i2c Ссылка на I2C транспорт
@@ -38,28 +38,28 @@ public:
      * @return Результат операции
      */
     OledResult init(II2c& i2c, const OledConfig& cfg);
-    
+
     /**
      * @brief Включить/выключить дисплей
      * @param on true - включить, false - выключить (sleep)
      * @return Результат операции
      */
     OledResult setPower(bool on);
-    
+
     /**
      * @brief Установить контраст
      * @param value Уровень контраста 0-255
      * @return Результат операции
      */
     OledResult setContrast(uint8_t value);
-    
+
     /**
      * @brief Включить/выключить инверсию
      * @param on true - инверсия включена
      * @return Результат операции
      */
     OledResult setInvert(bool on);
-    
+
     /**
      * @brief Записать буфер в GDDRAM
      * @param buffer Указатель на буфер (width * height / 8 байт)
@@ -67,17 +67,17 @@ public:
      * @return Результат операции
      */
     OledResult writeBuffer(const uint8_t* buffer, size_t size);
-    
+
     /**
      * @brief Проверить готовность драйвера
      */
     bool isReady() const { return initialized_; }
-    
+
     /**
      * @brief Получить текущую конфигурацию
      */
     const OledConfig& config() const { return cfg_; }
-    
+
 private:
     /**
      * @brief Отправить команду (control byte D/C#=0)
@@ -85,7 +85,7 @@ private:
      * @return true если успешно
      */
     bool writeCommand(uint8_t cmd);
-    
+
     /**
      * @brief Отправить команду с параметрами
      * @param cmds Массив команд
@@ -93,7 +93,7 @@ private:
      * @return true если успешно
      */
     bool writeCommands(const uint8_t* cmds, size_t len);
-    
+
     /**
      * @brief Отправить данные в GDDRAM (control byte D/C#=1)
      * @param data Указатель на данные
@@ -101,7 +101,7 @@ private:
      * @return true если успешно
      */
     bool writeData(const uint8_t* data, size_t len);
-    
+
     II2c* i2c_;
     OledConfig cfg_;
     bool initialized_ = false;
