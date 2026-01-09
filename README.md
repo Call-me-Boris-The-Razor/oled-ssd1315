@@ -4,7 +4,7 @@
 
 **Лёгкая библиотека для OLED дисплеев SSD1315/SSD1306**
 
-[![Версия](https://img.shields.io/badge/версия-2.1.1-blue.svg)](CHANGELOG.md)
+[![Версия](https://img.shields.io/badge/версия-2.1.2-blue.svg)](CHANGELOG.md)
 [![Лицензия](https://img.shields.io/badge/лицензия-MIT-green.svg)](LICENSE)
 [![PlatformIO](https://img.shields.io/badge/PlatformIO-совместим-orange.svg)](https://platformio.org)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org)

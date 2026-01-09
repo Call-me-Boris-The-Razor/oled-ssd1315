@@ -4,6 +4,15 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/).
 
+## [2.1.2] - 2025-01-09
+
+### Исправлено
+
+- **WireI2cAdapter guards** — добавлена проверка `OLED_USE_ARDUINO` для предотвращения включения `<Wire.h>` на STM32HAL
+- **Build script** — добавлен `srcFilter` для исключения `WireI2cAdapter.cpp` при сборке под STM32HAL
+
+---
+
 ## [2.1.1] - 2025-01-09
 
 ### Исправлено (Audit Fixes)
