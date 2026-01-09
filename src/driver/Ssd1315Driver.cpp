@@ -4,10 +4,9 @@
  */
 
 #include "../../include/oled/internal/Ssd1315Driver.hpp"
+#include "../../include/oled/internal/PlatformDelay.hpp"
 
 #if OLED_ENABLED
-
-#include <Arduino.h>
 
 namespace oled {
 
@@ -24,13 +23,8 @@ OledResult Ssd1315Driver::init(II2c& i2c, const OledConfig& cfg) {
         return OledResult::InvalidArg;
     }
     
-    // Аппаратный reset если задан GPIO
-    if (cfg_.resetGpio >= 0) {
-        hardwareReset();
-    } else {
-        // Без reset - задержка для стабилизации
-        delay(20);
-    }
+    // Аппаратный reset через callback или задержка для стабилизации
+    hardwareResetSequence(cfg_.resetCallback);
     
     // === Последовательность инициализации SSD1315 ===
     
@@ -262,20 +256,6 @@ bool Ssd1315Driver::writeData(const uint8_t* data, size_t len) {
     }
     
     return true;
-}
-
-void Ssd1315Driver::hardwareReset() {
-    if (cfg_.resetGpio < 0) return;
-    
-    pinMode(cfg_.resetGpio, OUTPUT);
-    
-    // Reset sequence: HIGH -> LOW -> HIGH
-    digitalWrite(cfg_.resetGpio, HIGH);
-    delay(1);
-    digitalWrite(cfg_.resetGpio, LOW);
-    delay(10);
-    digitalWrite(cfg_.resetGpio, HIGH);
-    delay(10);
 }
 
 } // namespace oled

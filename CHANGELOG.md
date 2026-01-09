@@ -4,6 +4,53 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/).
 
+## [2.0.0] - 2025-01-09
+
+### Добавлено (Multi-Platform Support)
+
+- **Поддержка STM32 HAL I2C** — работает с `stm32cube` framework
+- **Platform-agnostic архитектура** — единый API для Arduino и STM32
+- **Автоопределение платформы** — через `ARDUINO` или явные флаги
+- **Новый адаптер `Stm32HalI2cAdapter`** — для `I2C_HandleTypeDef*`
+- **`PlatformDelay.hpp`** — унифицированные задержки для всех платформ
+- **`resetCallback`** — platform-agnostic аппаратный reset вместо GPIO номера
+- **Скрипт `platformio_build.py`** — автоматический выбор адаптера
+- **Примеры для STM32 HAL** — `examples/stm32hal_basic/`
+- **Документация `STM32_HAL.md`** — полное руководство
+
+### Изменено
+
+- **`OledConfig.resetGpio`** заменён на **`OledConfig.resetCallback`**
+- **`library.json`** — добавлен `stm32cube` framework
+- **Убрана зависимость от Arduino.h** в драйвере
+- **Условная компиляция конструкторов** — `TwoWire&` или `I2C_HandleTypeDef*`
+
+### Флаги компиляции
+
+| Платформа | Флаги |
+|-----------|-------|
+| Arduino | `-DOLED_SSD1315_ENABLE=1` (автодетекция) |
+| STM32 HAL | `-DOLED_SSD1315_ENABLE=1 -DOLED_PLATFORM_STM32HAL=1` |
+
+### Новая структура
+
+```text
+include/oled/internal/
+├── PlatformDelay.hpp      (NEW)
+├── Stm32HalI2cAdapter.hpp (NEW)
+├── WireI2cAdapter.hpp
+├── ...
+
+scripts/
+└── platformio_build.py    (NEW)
+
+examples/
+├── basic/                 (Arduino)
+└── stm32hal_basic/        (NEW: STM32 HAL)
+```
+
+---
+
 ## [1.1.0] - 2025-01-09
 
 ### Изменено (Рефакторинг по аудиту)

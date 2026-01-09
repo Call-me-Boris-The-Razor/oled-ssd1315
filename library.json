@@ -1,7 +1,7 @@
 {
     "name": "oled_ssd1315",
-    "version": "1.1.0",
-    "description": "Lightweight OLED SSD1315 library for PlatformIO (I2C). Supports framebuffer, text, and primitives. Can be conditionally disabled via build flag.",
+    "version": "2.0.0",
+    "description": "Platform-agnostic OLED SSD1315/SSD1306 library. Supports Arduino Wire and STM32 HAL I2C. Framebuffer, graphics, UTF-8 text with Cyrillic support.",
     "keywords": [
         "oled",
         "ssd1315",
@@ -11,7 +11,9 @@
         "graphics",
         "embedded",
         "esp32",
-        "stm32"
+        "stm32",
+        "stm32hal",
+        "platform-agnostic"
     ],
     "authors": [
         {
@@ -21,10 +23,10 @@
     ],
     "repository": {
         "type": "git",
-        "url": ""
+        "url": "https://github.com/BorisRazor-OkoDev/oled-ssd1315.git"
     },
     "license": "MIT",
-    "frameworks": "arduino",
+    "frameworks": ["arduino", "stm32cube"],
     "platforms": [
         "espressif32",
         "espressif8266",
@@ -35,13 +37,16 @@
     "build": {
         "srcDir": "src",
         "includeDir": "include",
-        "flags": []
+        "flags": [],
+        "extraScript": "scripts/platformio_build.py"
     },
     "export": {
         "include": [
             "include/*",
             "src/*",
+            "scripts/*",
             "examples/*",
+            "docs/*",
             "README.md",
             "CHANGELOG.md",
             "LICENSE"

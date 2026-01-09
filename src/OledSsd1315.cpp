@@ -12,9 +12,17 @@
 
 namespace oled {
 
+#if OLED_USE_ARDUINO
 OledSsd1315::OledSsd1315(TwoWire& wire) : wire_(&wire) {
     // Объекты инициализируются в begin()
 }
+#endif
+
+#if OLED_USE_STM32HAL
+OledSsd1315::OledSsd1315(I2C_HandleTypeDef* hi2c) : hi2c_(hi2c) {
+    // Объекты инициализируются в begin()
+}
+#endif
 
 OledSsd1315::~OledSsd1315() {
     // Статические поля - деструктор тривиален
@@ -24,19 +32,24 @@ OledResult OledSsd1315::begin(const OledConfig& cfg) {
     // Сброс состояния
     resetState();
     
-    // Проверка Wire
-    if (!wire_) {
-        return OledResult::InvalidArg;
-    }
-    
     // Проверка размера буфера
     size_t bufSize = static_cast<size_t>(cfg.width) * cfg.height / 8;
     if (bufSize > OLED_MAX_BUFFER_SIZE) {
         return OledResult::InvalidArg;
     }
     
-    // Инициализируем адаптер I2C
+    // Инициализируем адаптер I2C (platform-specific)
+    #if OLED_USE_ARDUINO
+    if (!wire_) {
+        return OledResult::InvalidArg;
+    }
     adapter_.init(*wire_);
+    #elif OLED_USE_STM32HAL
+    if (!hi2c_) {
+        return OledResult::InvalidArg;
+    }
+    adapter_.init(hi2c_);
+    #endif
     
     // Инициализируем драйвер
     OledResult res = driver_.init(adapter_, cfg);

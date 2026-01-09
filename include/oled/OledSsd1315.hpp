@@ -15,13 +15,18 @@
 
 #include "OledConfig.hpp"
 #include "OledTypes.hpp"
-#include "internal/WireI2cAdapter.hpp"
 #include "internal/Ssd1315Driver.hpp"
 #include "internal/Gfx.hpp"
 #include <cstdarg>
 
+// Platform-specific includes
 #if OLED_ENABLED
-    #include <Wire.h>
+    #if OLED_USE_ARDUINO
+        #include <Wire.h>
+        #include "internal/WireI2cAdapter.hpp"
+    #elif OLED_USE_STM32HAL
+        #include "internal/Stm32HalI2cAdapter.hpp"
+    #endif
 #endif
 
 namespace oled {
@@ -31,7 +36,7 @@ namespace oled {
  * 
  * Объединяет транспорт, драйвер и графику в единый API.
  * 
- * Пример использования:
+ * Пример использования (Arduino):
  * @code
  * #include <Wire.h>
  * #include <oled/OledSsd1315.hpp>
@@ -48,6 +53,24 @@ namespace oled {
  *     oled.flush();
  * }
  * @endcode
+ * 
+ * Пример использования (STM32 HAL):
+ * @code
+ * #include <oled/OledSsd1315.hpp>
+ * 
+ * I2C_HandleTypeDef hi2c1;
+ * OledSsd1315 oled(&hi2c1);
+ * 
+ * int main() {
+ *     HAL_Init();
+ *     MX_I2C1_Init();
+ *     OledConfig cfg;
+ *     cfg.i2cAddr7 = 0x3C;
+ *     oled.begin(cfg);
+ *     oled.print("Привет!");
+ *     oled.flush();
+ * }
+ * @endcode
  */
 class OledSsd1315 {
 public:
@@ -57,11 +80,21 @@ public:
      */
     OledSsd1315() = default;
     
+    #if OLED_USE_ARDUINO
     /**
      * @brief Конструктор с Arduino Wire
      * @param wire Ссылка на TwoWire (обычно Wire)
      */
     explicit OledSsd1315(TwoWire& wire);
+    #endif
+    
+    #if OLED_USE_STM32HAL
+    /**
+     * @brief Конструктор с STM32 HAL I2C
+     * @param hi2c Указатель на I2C_HandleTypeDef
+     */
+    explicit OledSsd1315(I2C_HandleTypeDef* hi2c);
+    #endif
 #else
     /**
      * @brief Конструктор по умолчанию (когда библиотека отключена)
@@ -71,6 +104,8 @@ public:
     /**
      * @brief Конструктор-заглушка (когда библиотека отключена)
      */
+    template<typename T>
+    explicit OledSsd1315(T*) {}
     template<typename T>
     explicit OledSsd1315(T&) {}
 #endif
@@ -193,8 +228,13 @@ public:
     
 private:
 #if OLED_ENABLED
+    #if OLED_USE_ARDUINO
     TwoWire* wire_ = nullptr;
     WireI2cAdapter adapter_;
+    #elif OLED_USE_STM32HAL
+    I2C_HandleTypeDef* hi2c_ = nullptr;
+    Stm32HalI2cAdapter adapter_;
+    #endif
     Ssd1315Driver driver_;
     Gfx gfx_;
     uint8_t buffer_[OLED_MAX_BUFFER_SIZE] = {0};

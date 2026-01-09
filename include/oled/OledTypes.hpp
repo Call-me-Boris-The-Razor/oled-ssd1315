@@ -38,6 +38,26 @@ enum class VccMode {
 };
 
 /**
+ * @brief Тип callback для управления GPIO reset
+ * @param high true = установить HIGH, false = установить LOW
+ * 
+ * Пример для Arduino:
+ * @code
+ * void myResetCallback(bool high) {
+ *     digitalWrite(RST_PIN, high ? HIGH : LOW);
+ * }
+ * @endcode
+ * 
+ * Пример для STM32 HAL:
+ * @code
+ * void myResetCallback(bool high) {
+ *     HAL_GPIO_WritePin(RST_GPIO_Port, RST_Pin, high ? GPIO_PIN_SET : GPIO_PIN_RESET);
+ * }
+ * @endcode
+ */
+using ResetGpioCallback = void (*)(bool high);
+
+/**
  * @brief Конфигурация OLED дисплея
  */
 struct OledConfig {
@@ -47,7 +67,14 @@ struct OledConfig {
     uint32_t i2cFreq  = 400000;    // Частота I2C (опционально)
     VccMode  vccMode  = VccMode::InternalChargePump;
     bool     flip180  = false;     // Поворот на 180 градусов
-    int      resetGpio = -1;       // GPIO для reset (-1 = отсутствует)
+    
+    /**
+     * @brief Callback для аппаратного reset (platform-agnostic)
+     * 
+     * Если nullptr — используется только задержка для стабилизации.
+     * Если задан — выполняется последовательность: HIGH → LOW → HIGH.
+     */
+    ResetGpioCallback resetCallback = nullptr;
 };
 
 } // namespace oled

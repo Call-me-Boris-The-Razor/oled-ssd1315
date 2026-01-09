@@ -4,12 +4,12 @@
 
 **Лёгкая библиотека для OLED дисплеев SSD1315/SSD1306**
 
-[![Версия](https://img.shields.io/badge/версия-1.1.0-blue.svg)](CHANGELOG.md)
+[![Версия](https://img.shields.io/badge/версия-2.0.0-blue.svg)](CHANGELOG.md)
 [![Лицензия](https://img.shields.io/badge/лицензия-MIT-green.svg)](LICENSE)
 [![PlatformIO](https://img.shields.io/badge/PlatformIO-совместим-orange.svg)](https://platformio.org)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org)
 
-*Framebuffer • Графика • UTF-8 текст • Кириллица • Без динамической памяти*
+*Framebuffer • Графика • UTF-8 текст • Кириллица • Arduino • STM32 HAL*
 
 [Быстрый старт](#-быстрый-старт) •
 [API](#-api-reference) •
@@ -36,12 +36,22 @@
 
 ## ✨ Особенности
 
+- **📟 Multi-Platform** — Arduino Wire и STM32 HAL I2C
 - **Framebuffer** — все операции рисования в памяти, затем `flush()` на дисплей
 - **Примитивы** — пиксель, линия, прямоугольник (контур и заливка)
 - **Текст** — встроенный шрифт 5×7, **поддержка русского языка (UTF-8)**, масштабирование
 - **Условное включение** — если флаг не задан, библиотека компилируется как заглушки
 - **Без внешних зависимостей** — не требует тяжёлых GFX библиотек
 - **Модульная архитектура** — Transport → Driver → GFX → Facade
+
+## 💻 Поддерживаемые платформы
+
+| Платформа | Framework | Флаги |
+|-----------|-----------|------|
+| ESP32/ESP8266 | Arduino | Автоматически |
+| AVR/SAM | Arduino | Автоматически |
+| STM32 (Arduino) | Arduino | Автоматически |
+| **STM32 (HAL)** | stm32cube | `-DOLED_PLATFORM_STM32HAL=1` |
 
 ## Поддерживаемые дисплеи
 
@@ -100,6 +110,8 @@ build_flags =
 
 ## Быстрый старт
 
+### Arduino
+
 ```cpp
 #include <Wire.h>
 #include <oled/OledSsd1315.hpp>
@@ -110,24 +122,52 @@ void setup() {
     Wire.begin();
     
     OledConfig cfg;
-    cfg.i2cAddr7 = 0x3C;      // 7-битный адрес
+    cfg.i2cAddr7 = 0x3C;
     cfg.width = 128;
     cfg.height = 64;
-    cfg.vccMode = VccMode::InternalChargePump;
     
     if (oled.begin(cfg) != OledResult::Ok) {
-        // Ошибка инициализации
         return;
     }
     
     oled.clear();
-    oled.setCursor(0, 0);
-    oled.print("SSD1315 OK");
+    oled.print("Hello Arduino!");
     oled.flush();
 }
 
 void loop() {}
 ```
+
+### STM32 HAL
+
+```cpp
+#include "main.h"
+#include <oled/OledSsd1315.hpp>
+
+extern I2C_HandleTypeDef hi2c1;
+OledSsd1315 oled(&hi2c1);
+
+int main(void) {
+    HAL_Init();
+    SystemClock_Config();
+    MX_I2C1_Init();
+    
+    OledConfig cfg;
+    cfg.i2cAddr7 = 0x3C;
+    
+    if (oled.begin(cfg) != OledResult::Ok) {
+        Error_Handler();
+    }
+    
+    oled.clear();
+    oled.print("Привет STM32!");
+    oled.flush();
+    
+    while (1) {}
+}
+```
+
+> 📖 Подробнее: [docs/STM32_HAL.md](docs/STM32_HAL.md)
 
 ## API Reference
 
@@ -154,7 +194,7 @@ struct OledConfig {
     uint32_t i2cFreq  = 400000;    // Частота I2C
     VccMode  vccMode  = VccMode::InternalChargePump;
     bool     flip180  = false;     // Поворот на 180°
-    int      resetGpio = -1;       // GPIO reset (-1 = нет)
+    ResetGpioCallback resetCallback = nullptr;  // Callback для reset
 };
 
 enum class VccMode {
@@ -226,17 +266,21 @@ enum class VccMode {
 ```text
 lib/oled_ssd1315/
 ├── include/oled/
-│   ├── OledConfig.hpp     # Единая конфигурация и флаги
-│   ├── OledTypes.hpp      # Типы и enum'ы
-│   ├── OledSsd1315.hpp    # Главный заголовок
-│   └── internal/          # Внутренние компоненты
-│       ├── II2c.hpp
-│       ├── WireI2cAdapter.hpp
+│   ├── OledConfig.hpp          # Конфигурация и автодетекция платформы
+│   ├── OledTypes.hpp           # Типы и enum'ы
+│   ├── OledSsd1315.hpp         # Главный заголовок
+│   └── internal/
+│       ├── II2c.hpp            # Интерфейс I2C
+│       ├── WireI2cAdapter.hpp  # Arduino Wire
+│       ├── Stm32HalI2cAdapter.hpp  # STM32 HAL (NEW)
+│       ├── PlatformDelay.hpp   # Platform-agnostic delay (NEW)
 │       ├── Ssd1315Driver.hpp
 │       ├── Ssd1315Commands.hpp
 │       └── Gfx.hpp
+├── scripts/
+│   └── platformio_build.py     # Автовыбор платформы (NEW)
 ├── src/
-│   ├── OledSsd1315.cpp    # Facade реализация
+│   ├── OledSsd1315.cpp         # Facade реализация
 │   ├── driver/
 │   │   └── Ssd1315Driver.cpp
 │   ├── gfx/

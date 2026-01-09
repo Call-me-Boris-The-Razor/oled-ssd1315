@@ -102,11 +102,6 @@ private:
      */
     bool writeData(const uint8_t* data, size_t len);
     
-    /**
-     * @brief Аппаратный reset через GPIO
-     */
-    void hardwareReset();
-    
     II2c* i2c_;
     OledConfig cfg_;
     bool initialized_ = false;
