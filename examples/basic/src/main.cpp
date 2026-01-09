@@ -14,7 +14,7 @@
 #include <oled/OledSsd1315.hpp>
 
 // Создаём объект OLED с привязкой к Wire
-OledSsd1315 oled(Wire);
+OledSsd1315 display(Wire);
 
 void setup() {
     Serial.begin(115200);
@@ -33,10 +33,10 @@ void setup() {
     cfg.height = 64;      // Или 32 для 128x32 дисплеев
     cfg.vccMode = VccMode::InternalChargePump;  // Для большинства модулей
     cfg.flip180 = false;  // true если изображение вверх ногами
-    cfg.resetGpio = -1;   // -1 если reset не подключён
+    // cfg.resetCallback = nullptr;  // по умолчанию, можно не указывать
     
     // Инициализация
-    OledResult result = oled.begin(cfg);
+    OledResult result = display.begin(cfg);
     
     if (result != OledResult::Ok) {
         Serial.print("OLED init failed: ");
@@ -61,28 +61,28 @@ void setup() {
     // === Демонстрация возможностей ===
     
     // Очистка экрана
-    oled.clear();
+    display.clear();
     
     // Вывод текста
-    oled.setCursor(0, 0);
-    oled.setTextSize(1);  // Масштаб 1 = 5x7 пикселей
-    oled.print("SSD1315 Library");
+    display.setCursor(0, 0);
+    display.setTextSize(1);  // Масштаб 1 = 5x7 пикселей
+    display.print("SSD1315 Library");
     
-    oled.setCursor(0, 10);
-    oled.print("128x64 OLED");
+    display.setCursor(0, 10);
+    display.print("128x64 OLED");
     
     // Текст с масштабом 2
-    oled.setCursor(0, 24);
-    oled.setTextSize(2);
-    oled.print("OK!");
+    display.setCursor(0, 24);
+    display.setTextSize(2);
+    display.print("OK!");
     
     // Рисование примитивов
-    oled.rect(80, 20, 40, 30, true);      // Прямоугольник (контур)
-    oled.rectFill(85, 25, 10, 10, true);  // Залитый прямоугольник
-    oled.line(0, 63, 127, 50, true);      // Линия
+    display.rect(80, 20, 40, 30, true);      // Прямоугольник (контур)
+    display.rectFill(85, 25, 10, 10, true);  // Залитый прямоугольник
+    display.line(0, 63, 127, 50, true);      // Линия
     
     // Отправка буфера на дисплей
-    oled.flush();
+    display.flush();
     
     Serial.println("Display updated!");
 }
@@ -97,14 +97,14 @@ void loop() {
         counter++;
         
         // Очищаем область для счётчика
-        oled.rectFill(0, 54, 80, 10, false);
+        display.rectFill(0, 54, 80, 10, false);
         
         // Выводим счётчик
-        oled.setCursor(0, 54);
-        oled.setTextSize(1);
-        oled.printf("Count: %d", counter);
+        display.setCursor(0, 54);
+        display.setTextSize(1);
+        display.printf("Count: %d", counter);
         
         // Обновляем дисплей
-        oled.flush();
+        display.flush();
     }
 }

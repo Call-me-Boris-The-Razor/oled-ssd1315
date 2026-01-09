@@ -12,14 +12,17 @@
  *   -DOLED_PLATFORM_STM32HAL=1
  */
 
-#include "main.h"
+#include "stm32f4xx_hal.h"
 #include <oled/OledSsd1315.hpp>
+
+// Прототипы
+void Error_Handler(void);
 
 // I2C handle (инициализируется в MX_I2C1_Init)
 I2C_HandleTypeDef hi2c1;
 
 // OLED дисплей
-OledSsd1315 oled(&hi2c1);
+OledSsd1315 display(&hi2c1);
 
 // Прототипы функций инициализации
 void SystemClock_Config(void);
@@ -60,7 +63,7 @@ int main(void) {
     cfg.flip180 = false;
     // cfg.resetCallback = &oledResetCallback; // Если есть RST пин
     
-    if (oled.begin(cfg) != OledResult::Ok) {
+    if (display.begin(cfg) != OledResult::Ok) {
         // Ошибка инициализации - мигаем LED
         while (1) {
             HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
@@ -71,23 +74,23 @@ int main(void) {
     // === Демонстрация возможностей ===
     
     // Очистка и вывод текста
-    oled.clear();
-    oled.setCursor(0, 0);
-    oled.setTextSize(1);
-    oled.print("OLED SSD1315");
+    display.clear();
+    display.setCursor(0, 0);
+    display.setTextSize(1);
+    display.print("OLED SSD1315");
     
-    oled.setCursor(0, 10);
-    oled.print("STM32 HAL Demo");
+    display.setCursor(0, 10);
+    display.print("STM32 HAL Demo");
     
-    oled.setCursor(0, 24);
-    oled.setTextSize(2);
-    oled.print("Привет!");
+    display.setCursor(0, 24);
+    display.setTextSize(2);
+    display.print("Привет!");
     
     // Рисуем рамку
-    oled.rect(0, 0, 128, 64, true);
+    display.rect(0, 0, 128, 64, true);
     
     // Отправляем на дисплей
-    oled.flush();
+    display.flush();
     
     // Главный цикл
     uint32_t counter = 0;
@@ -95,11 +98,11 @@ int main(void) {
         HAL_Delay(1000);
         
         // Обновляем счётчик
-        oled.rectFill(0, 48, 128, 16, false);  // Очищаем область
-        oled.setCursor(4, 50);
-        oled.setTextSize(1);
-        oled.printf("Uptime: %lu sec", counter++);
-        oled.flush();
+        display.rectFill(0, 48, 128, 16, false);  // Очищаем область
+        display.setCursor(4, 50);
+        display.setTextSize(1);
+        display.printf("Uptime: %lu sec", counter++);
+        display.flush();
     }
 }
 

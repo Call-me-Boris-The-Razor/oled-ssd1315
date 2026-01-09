@@ -9,6 +9,7 @@
 #define OLED_PLATFORM_DELAY_HPP
 
 #include "../OledConfig.hpp"
+#include "../OledTypes.hpp"
 #include <cstdint>
 
 #if OLED_USE_ARDUINO
@@ -59,12 +60,6 @@ inline void platformDelay(uint32_t ms) {
     }
 #endif
 }
-
-/**
- * @brief Тип callback для управления GPIO reset
- * @param high true = HIGH, false = LOW
- */
-using ResetGpioCallback = void (*)(bool high);
 
 /**
  * @brief Выполнить hardware reset через callback

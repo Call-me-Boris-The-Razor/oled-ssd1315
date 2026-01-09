@@ -361,7 +361,7 @@ struct OledConfig {
     uint32_t i2cFreq  = 400000;
     VccMode  vccMode  = VccMode::InternalChargePump;
     bool     flip180  = false;
-    int      resetGpio = -1;
+    ResetGpioCallback resetCallback = nullptr;
 };
 ```
 
@@ -373,7 +373,7 @@ struct OledConfig {
 | `i2cFreq` | `uint32_t` | `400000` | Частота I2C (Гц) |
 | `vccMode` | `VccMode` | `InternalChargePump` | Режим питания |
 | `flip180` | `bool` | `false` | Поворот на 180° |
-| `resetGpio` | `int` | `-1` | GPIO для reset (-1 = не используется) |
+| `resetCallback` | `ResetGpioCallback` | `nullptr` | Callback для аппаратного reset (platform-agnostic) |
 
 ---
 
