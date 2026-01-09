@@ -9,6 +9,7 @@
 
 #include <cstdio>
 #include <cstdarg>
+#include <cstring>
 
 namespace oled {
 
@@ -176,6 +177,136 @@ void OledSsd1315::printf(const char* fmt, ...) {
     gfx_.print(buf);
 }
 
+// === Диагностика (Фаза 1) ===
+
+OledResult OledSsd1315::getLastResult() const {
+    return lastResult_;
+}
+
+const char* OledSsd1315::getLastError() const {
+    return lastErrorMsg_;
+}
+
+uint8_t OledSsd1315::scanAddress(uint8_t startAddr, uint8_t endAddr) {
+    if (startAddr > endAddr) {
+        return 0;
+    }
+    
+    // Минимальная команда для проверки: пустой буфер
+    uint8_t dummy = 0x00;
+    
+    for (uint8_t addr = startAddr; addr <= endAddr; addr++) {
+        bool found = adapter_.write(addr, &dummy, 0);
+        if (found) {
+            return addr;
+        }
+    }
+    
+    return 0;  // Не найден
+}
+
+// === STM32 HAL специфичные методы (Фаза 2) ===
+
+#if OLED_USE_STM32HAL
+
+OledResult OledSsd1315::flushDMA() {
+    if (!isReady()) {
+        lastResult_ = OledResult::NotInitialized;
+        lastErrorMsg_ = "Display not initialized";
+        return lastResult_;
+    }
+    
+    if (dmaInProgress_) {
+        lastResult_ = OledResult::Busy;
+        lastErrorMsg_ = "DMA transfer in progress";
+        return lastResult_;
+    }
+    
+    // Получаем конфигурацию для адреса
+    const OledConfig& cfg = driver_.config();
+    uint16_t addr8 = static_cast<uint16_t>(cfg.i2cAddr7) << 1;
+    
+    // Подготовка буфера с командой данных
+    // Для DMA нужен отдельный буфер с префиксом 0x40
+    static uint8_t dmaBuffer[OLED_MAX_BUFFER_SIZE + 1];
+    dmaBuffer[0] = 0x40;  // Data command
+    memcpy(dmaBuffer + 1, gfx_.buffer(), gfx_.bufferSize());
+    
+    dmaInProgress_ = true;
+    
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit_DMA(
+        hi2c_,
+        addr8,
+        dmaBuffer,
+        static_cast<uint16_t>(gfx_.bufferSize() + 1)
+    );
+    
+    if (status != HAL_OK) {
+        dmaInProgress_ = false;
+        lastResult_ = OledResult::I2cError;
+        lastErrorMsg_ = "DMA transfer start failed";
+        return lastResult_;
+    }
+    
+    lastResult_ = OledResult::Ok;
+    lastErrorMsg_ = nullptr;
+    return lastResult_;
+}
+
+bool OledSsd1315::isDMAComplete() const {
+    return !dmaInProgress_;
+}
+
+bool OledSsd1315::i2cBusRecovery(void* gpioPort, uint16_t sclPin, uint16_t sdaPin) {
+    if (!gpioPort) {
+        return false;
+    }
+    
+    GPIO_TypeDef* port = static_cast<GPIO_TypeDef*>(gpioPort);
+    
+    // Сохраняем текущий режим пинов
+    GPIO_InitTypeDef gpio = {0};
+    gpio.Mode = GPIO_MODE_OUTPUT_OD;
+    gpio.Pull = GPIO_PULLUP;
+    gpio.Speed = GPIO_SPEED_FREQ_LOW;
+    
+    // Настраиваем SCL как выход
+    gpio.Pin = sclPin;
+    HAL_GPIO_Init(port, &gpio);
+    
+    // Проверяем SDA - если LOW, генерируем clock pulses
+    bool recovered = false;
+    
+    for (int i = 0; i < 9; i++) {
+        // Генерируем clock pulse
+        HAL_GPIO_WritePin(port, sclPin, GPIO_PIN_RESET);
+        for (volatile int d = 0; d < 100; d++) {}  // Небольшая задержка
+        
+        HAL_GPIO_WritePin(port, sclPin, GPIO_PIN_SET);
+        for (volatile int d = 0; d < 100; d++) {}
+        
+        // Проверяем SDA
+        if (HAL_GPIO_ReadPin(port, sdaPin) == GPIO_PIN_SET) {
+            recovered = true;
+            break;
+        }
+    }
+    
+    // Генерируем STOP condition
+    gpio.Pin = sdaPin;
+    HAL_GPIO_Init(port, &gpio);
+    
+    HAL_GPIO_WritePin(port, sdaPin, GPIO_PIN_RESET);
+    for (volatile int d = 0; d < 100; d++) {}
+    HAL_GPIO_WritePin(port, sclPin, GPIO_PIN_SET);
+    for (volatile int d = 0; d < 100; d++) {}
+    HAL_GPIO_WritePin(port, sdaPin, GPIO_PIN_SET);
+    
+    return recovered;
+}
+
+#endif // OLED_USE_STM32HAL
+
 } // namespace oled
 
 #else // OLED_ENABLED == 0
@@ -233,6 +364,18 @@ void OledSsd1315::setTextColor(bool) {}
 void OledSsd1315::print(const char*) {}
 
 void OledSsd1315::printf(const char*, ...) {}
+
+OledResult OledSsd1315::getLastResult() const {
+    return OledResult::Disabled;
+}
+
+const char* OledSsd1315::getLastError() const {
+    return "Library disabled";
+}
+
+uint8_t OledSsd1315::scanAddress(uint8_t, uint8_t) {
+    return 0;
+}
 
 } // namespace oled
 

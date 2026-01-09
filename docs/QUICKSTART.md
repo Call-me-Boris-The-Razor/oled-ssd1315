@@ -75,7 +75,7 @@ lib_deps =
 #include <Wire.h>
 #include <oled/OledSsd1315.hpp>
 
-OledSsd1315 oled(Wire);
+OledSsd1315 display(Wire);
 
 void setup() {
     // Инициализация I2C
@@ -88,15 +88,15 @@ void setup() {
     cfg.height = 64;
     
     // Инициализация дисплея
-    if (oled.begin(cfg) != OledResult::Ok) {
+    if (display.begin(cfg) != OledResult::Ok) {
         // Ошибка!
         return;
     }
     
     // Вывод текста
-    oled.clear();
-    oled.print("Hello World!");
-    oled.flush();
+    display.clear();
+    display.print("Hello World!");
+    display.flush();
 }
 
 void loop() {

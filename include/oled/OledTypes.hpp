@@ -23,7 +23,9 @@ enum class OledResult {
     I2cError,       // Ошибка I2C
     NotInitialized, // Дисплей не инициализирован
     InvalidArg,     // Неверный аргумент
-    Unsupported     // Операция не поддерживается
+    Unsupported,    // Операция не поддерживается
+    Busy,           // Устройство занято (DMA в процессе)
+    Timeout         // Таймаут операции
 };
 
 /**

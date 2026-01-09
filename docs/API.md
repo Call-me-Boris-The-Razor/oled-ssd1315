@@ -349,6 +349,112 @@ oled.printf("Vcc: %.1f V", voltage);
 
 ---
 
+### Диагностика
+
+#### `getLastResult()`
+
+```cpp
+OledResult getLastResult() const;
+```
+
+Возвращает результат последней операции.
+
+---
+
+#### `getLastError()`
+
+```cpp
+const char* getLastError() const;
+```
+
+Возвращает текстовое описание последней ошибки или `nullptr` если ошибок не было.
+
+**Пример:**
+
+```cpp
+if (display.begin(cfg) != OledResult::Ok) {
+    Serial.println(display.getLastError());
+}
+```
+
+---
+
+#### `scanAddress()`
+
+```cpp
+uint8_t scanAddress(uint8_t startAddr = 0x3C, uint8_t endAddr = 0x3D);
+```
+
+Сканирует I2C шину для поиска адреса дисплея.
+
+| Параметр | Тип | По умолчанию | Описание |
+|----------|-----|--------------|----------|
+| `startAddr` | `uint8_t` | `0x3C` | Начальный адрес |
+| `endAddr` | `uint8_t` | `0x3D` | Конечный адрес |
+
+**Возвращает:** Найденный адрес или `0` если не найден.
+
+**Пример:**
+
+```cpp
+uint8_t addr = display.scanAddress();
+if (addr != 0) {
+    cfg.i2cAddr7 = addr;
+    display.begin(cfg);
+}
+```
+
+---
+
+### STM32 HAL специфичные методы
+
+> Доступны только при компиляции с `-DOLED_PLATFORM_STM32HAL=1`
+
+#### `flushDMA()`
+
+```cpp
+OledResult flushDMA();
+```
+
+Отправляет буфер на дисплей через DMA (non-blocking).
+
+**Требования:** Настроенный DMA для I2C TX в CubeMX.
+
+**Возвращает:**
+- `OledResult::Ok` — передача начата
+- `OledResult::Busy` — предыдущая передача не завершена
+- `OledResult::I2cError` — ошибка DMA
+
+---
+
+#### `isDMAComplete()`
+
+```cpp
+bool isDMAComplete() const;
+```
+
+Проверяет завершение DMA передачи.
+
+---
+
+#### `i2cBusRecovery()`
+
+```cpp
+static bool i2cBusRecovery(void* gpioPort, uint16_t sclPin, uint16_t sdaPin);
+```
+
+Восстанавливает I2C шину после зависания (SDA stuck LOW).
+
+| Параметр | Тип | Описание |
+|----------|-----|----------|
+| `gpioPort` | `void*` | Указатель на GPIO порт (например `GPIOB`) |
+| `sclPin` | `uint16_t` | Пин SCL (например `GPIO_PIN_6`) |
+| `sdaPin` | `uint16_t` | Пин SDA (например `GPIO_PIN_7`) |
+
+**Возвращает:** `true` если восстановление успешно.
+
+---
+
 ## Структура OledConfig
 
 Конфигурация дисплея.

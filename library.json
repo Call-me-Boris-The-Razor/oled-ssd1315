@@ -1,6 +1,6 @@
 {
     "name": "oled_ssd1315",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "Platform-agnostic OLED SSD1315/SSD1306 library. Supports Arduino Wire and STM32 HAL I2C. Framebuffer, graphics, UTF-8 text with Cyrillic support.",
     "keywords": [
         "oled",

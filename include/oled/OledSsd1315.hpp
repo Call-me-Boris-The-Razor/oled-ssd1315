@@ -226,6 +226,52 @@ public:
      */
     void printf(const char* fmt, ...);
     
+    // === Диагностика (Фаза 1) ===
+    
+    /**
+     * @brief Получить последний результат операции
+     */
+    OledResult getLastResult() const;
+    
+    /**
+     * @brief Получить текстовое описание последней ошибки
+     * @return Строка с описанием ошибки или nullptr если ошибок не было
+     */
+    const char* getLastError() const;
+    
+    /**
+     * @brief Сканировать I2C шину для поиска адреса дисплея
+     * @param startAddr Начальный адрес для сканирования (по умолчанию 0x3C)
+     * @param endAddr Конечный адрес для сканирования (по умолчанию 0x3D)
+     * @return Найденный адрес или 0 если не найден
+     */
+    uint8_t scanAddress(uint8_t startAddr = 0x3C, uint8_t endAddr = 0x3D);
+    
+    // === DMA (Фаза 2) ===
+    
+#if OLED_USE_STM32HAL
+    /**
+     * @brief Отправить буфер на дисплей через DMA (non-blocking)
+     * @return OledResult::Ok если передача начата
+     * @note Требует настроенный DMA для I2C TX
+     */
+    OledResult flushDMA();
+    
+    /**
+     * @brief Проверить завершение DMA передачи
+     */
+    bool isDMAComplete() const;
+    
+    /**
+     * @brief Восстановить I2C шину после зависания
+     * @param gpioPort Порт GPIO (например GPIOB)
+     * @param sclPin Пин SCL
+     * @param sdaPin Пин SDA
+     * @return true если восстановление успешно
+     */
+    static bool i2cBusRecovery(void* gpioPort, uint16_t sclPin, uint16_t sdaPin);
+#endif
+    
 private:
 #if OLED_ENABLED
     #if OLED_USE_ARDUINO
@@ -239,6 +285,11 @@ private:
     Gfx gfx_;
     uint8_t buffer_[OLED_MAX_BUFFER_SIZE] = {0};
     bool initialized_ = false;
+    OledResult lastResult_ = OledResult::Ok;
+    const char* lastErrorMsg_ = nullptr;
+    #if OLED_USE_STM32HAL
+    volatile bool dmaInProgress_ = false;
+    #endif
 #endif
 };
 

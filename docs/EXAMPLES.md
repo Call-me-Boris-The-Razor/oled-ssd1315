@@ -22,7 +22,7 @@
 #include <Wire.h>
 #include <oled/OledSsd1315.hpp>
 
-OledSsd1315 oled(Wire);
+OledSsd1315 display(Wire);
 
 void setup() {
     Wire.begin();
@@ -30,10 +30,10 @@ void setup() {
     OledConfig cfg;
     cfg.i2cAddr7 = 0x3C;
     
-    oled.begin(cfg);
-    oled.clear();
-    oled.print("Hello World!");
-    oled.flush();
+    display.begin(cfg);
+    display.clear();
+    display.print("Hello World!");
+    display.flush();
 }
 
 void loop() {}
@@ -50,27 +50,27 @@ void setup() {
     Wire.begin();
     
     OledConfig cfg;
-    oled.begin(cfg);
+    display.begin(cfg);
     
-    oled.clear();
+    display.clear();
     
     // Русский текст
-    oled.setCursor(0, 0);
-    oled.print("Привет мир!");
+    display.setCursor(0, 0);
+    display.print("Привет мир!");
     
     // Смешанный текст
-    oled.setCursor(0, 10);
-    oled.print("Hello Мир!");
+    display.setCursor(0, 10);
+    display.print("Hello Мир!");
     
     // Кириллица в printf
-    oled.setCursor(0, 20);
-    oled.printf("Темп: %d°C", 25);
+    display.setCursor(0, 20);
+    display.printf("Темп: %d°C", 25);
     
     // Буквы Ё и ё
-    oled.setCursor(0, 30);
-    oled.print("Ёлка, ёжик");
+    display.setCursor(0, 30);
+    display.print("Ёлка, ёжик");
     
-    oled.flush();
+    display.flush();
 }
 ```
 
@@ -86,23 +86,23 @@ void setup() {
 
 ```cpp
 void drawPrimitives() {
-    oled.clear();
+    display.clear();
     
     // Точки
     for (int i = 0; i < 128; i += 4) {
-        oled.pixel(i, 0, true);
+        display.pixel(i, 0, true);
     }
     
     // Горизонтальная линия
-    oled.line(0, 10, 127, 10, true);
+    display.line(0, 10, 127, 10, true);
     
     // Вертикальная линия
-    oled.line(64, 10, 64, 63, true);
+    display.line(64, 10, 64, 63, true);
     
     // Диагональ
-    oled.line(0, 20, 127, 63, true);
+    display.line(0, 20, 127, 63, true);
     
-    oled.flush();
+    display.flush();
 }
 ```
 
@@ -110,23 +110,23 @@ void drawPrimitives() {
 
 ```cpp
 void drawRects() {
-    oled.clear();
+    display.clear();
     
     // Контуры
-    oled.rect(0, 0, 40, 30, true);
-    oled.rect(5, 5, 30, 20, true);
+    display.rect(0, 0, 40, 30, true);
+    display.rect(5, 5, 30, 20, true);
     
     // Залитые
-    oled.rectFill(50, 0, 20, 20, true);
-    oled.rectFill(80, 0, 40, 30, true);
+    display.rectFill(50, 0, 20, 20, true);
+    display.rectFill(80, 0, 40, 30, true);
     
     // Инвертированный текст внутри
-    oled.setCursor(82, 10);
-    oled.setTextColor(false);  // Чёрный текст
-    oled.print("OK");
-    oled.setTextColor(true);   // Вернуть белый
+    display.setCursor(82, 10);
+    display.setTextColor(false);  // Чёрный текст
+    display.print("OK");
+    display.setTextColor(true);   // Вернуть белый
     
-    oled.flush();
+    display.flush();
 }
 ```
 
@@ -134,25 +134,25 @@ void drawRects() {
 
 ```cpp
 void drawBorder() {
-    oled.clear();
+    display.clear();
     
     // Рамка по периметру
-    oled.rect(0, 0, 128, 64, true);
+    display.rect(0, 0, 128, 64, true);
     
     // Заголовок
-    oled.rectFill(0, 0, 128, 12, true);
-    oled.setCursor(2, 2);
-    oled.setTextColor(false);
-    oled.print("MENU");
-    oled.setTextColor(true);
+    display.rectFill(0, 0, 128, 12, true);
+    display.setCursor(2, 2);
+    display.setTextColor(false);
+    display.print("MENU");
+    display.setTextColor(true);
     
     // Контент
-    oled.setCursor(4, 16);
-    oled.print("Item 1");
-    oled.setCursor(4, 26);
-    oled.print("Item 2");
+    display.setCursor(4, 16);
+    display.print("Item 1");
+    display.setCursor(4, 26);
+    display.print("Item 2");
     
-    oled.flush();
+    display.flush();
 }
 ```
 
@@ -169,10 +169,10 @@ void marquee() {
     int offset = 0;
     
     while (true) {
-        oled.clear();
-        oled.setCursor(-offset, 28);
-        oled.print(text);
-        oled.flush();
+        display.clear();
+        display.setCursor(-offset, 28);
+        display.print(text);
+        display.flush();
         
         offset++;
         if (offset > textWidth) offset = 0;
@@ -188,16 +188,16 @@ void marquee() {
 void blinkingCursor() {
     bool visible = true;
     
-    oled.clear();
-    oled.print("Input: ");
-    oled.flush();
+    display.clear();
+    display.print("Input: ");
+    display.flush();
     
     int cursorX = 42;  // После "Input: "
     
     while (true) {
         // Курсор
-        oled.rectFill(cursorX, 0, 6, 8, visible);
-        oled.flush();
+        display.rectFill(cursorX, 0, 6, 8, visible);
+        display.flush();
         
         visible = !visible;
         delay(500);
@@ -209,20 +209,20 @@ void blinkingCursor() {
 
 ```cpp
 void progressBar(int percent) {
-    oled.clear();
+    display.clear();
     
     // Рамка прогресс-бара
-    oled.rect(10, 25, 108, 14, true);
+    display.rect(10, 25, 108, 14, true);
     
     // Заполнение
     int fillWidth = (percent * 104) / 100;
-    oled.rectFill(12, 27, fillWidth, 10, true);
+    display.rectFill(12, 27, fillWidth, 10, true);
     
     // Процент
-    oled.setCursor(50, 45);
-    oled.printf("%d%%", percent);
+    display.setCursor(50, 45);
+    display.printf("%d%%", percent);
     
-    oled.flush();
+    display.flush();
 }
 
 void loop() {
@@ -241,34 +241,34 @@ void loop() {
 
 ```cpp
 void showSensorData(float temp, float humidity) {
-    oled.clear();
+    display.clear();
     
     // Заголовок
-    oled.setCursor(0, 0);
-    oled.setTextSize(1);
-    oled.print("Датчики:");
+    display.setCursor(0, 0);
+    display.setTextSize(1);
+    display.print("Датчики:");
     
     // Температура (крупно)
-    oled.setCursor(0, 16);
-    oled.setTextSize(2);
-    oled.printf("%.1f", temp);
-    oled.setTextSize(1);
-    oled.print(" C");
+    display.setCursor(0, 16);
+    display.setTextSize(2);
+    display.printf("%.1f", temp);
+    display.setTextSize(1);
+    display.print(" C");
     
     // Влажность
-    oled.setCursor(0, 40);
-    oled.setTextSize(2);
-    oled.printf("%.0f", humidity);
-    oled.setTextSize(1);
-    oled.print(" %");
+    display.setCursor(0, 40);
+    display.setTextSize(2);
+    display.printf("%.0f", humidity);
+    display.setTextSize(1);
+    display.print(" %");
     
     // Иконки (простые)
-    oled.setCursor(100, 16);
-    oled.print("T");
-    oled.setCursor(100, 40);
-    oled.print("H");
+    display.setCursor(100, 16);
+    display.print("T");
+    display.setCursor(100, 40);
+    display.print("H");
     
-    oled.flush();
+    display.flush();
 }
 ```
 
@@ -285,11 +285,11 @@ void addGraphPoint(int value) {
 }
 
 void drawGraph() {
-    oled.clear();
+    display.clear();
     
     // Оси
-    oled.line(10, 0, 10, 50, true);   // Y
-    oled.line(10, 50, 127, 50, true); // X
+    display.line(10, 0, 10, 50, true);   // Y
+    display.line(10, 50, 127, 50, true); // X
     
     // Данные
     for (int i = 0; i < GRAPH_POINTS - 1; i++) {
@@ -299,10 +299,10 @@ void drawGraph() {
         int y1 = 50 - (graphData[idx1] * 45 / 100);
         int y2 = 50 - (graphData[idx2] * 45 / 100);
         
-        oled.line(12 + i, y1, 13 + i, y2, true);
+        display.line(12 + i, y1, 13 + i, y2, true);
     }
     
-    oled.flush();
+    display.flush();
 }
 ```
 
@@ -322,25 +322,25 @@ const int menuCount = 5;
 int menuSelected = 0;
 
 void drawMenu() {
-    oled.clear();
+    display.clear();
     
     for (int i = 0; i < menuCount; i++) {
         int y = i * 12;
         
         if (i == menuSelected) {
             // Выделенный пункт
-            oled.rectFill(0, y, 128, 11, true);
-            oled.setCursor(4, y + 2);
-            oled.setTextColor(false);
-            oled.print(menuItems[i]);
-            oled.setTextColor(true);
+            display.rectFill(0, y, 128, 11, true);
+            display.setCursor(4, y + 2);
+            display.setTextColor(false);
+            display.print(menuItems[i]);
+            display.setTextColor(true);
         } else {
-            oled.setCursor(4, y + 2);
-            oled.print(menuItems[i]);
+            display.setCursor(4, y + 2);
+            display.print(menuItems[i]);
         }
     }
     
-    oled.flush();
+    display.flush();
 }
 
 void menuUp() {
@@ -360,22 +360,22 @@ void menuDown() {
 
 ```cpp
 void splashScreen() {
-    oled.clear();
+    display.clear();
     
     // Логотип (простой)
-    oled.rectFill(44, 10, 40, 30, true);
-    oled.setCursor(52, 18);
-    oled.setTextColor(false);
-    oled.setTextSize(2);
-    oled.print("SK");
-    oled.setTextColor(true);
-    oled.setTextSize(1);
+    display.rectFill(44, 10, 40, 30, true);
+    display.setCursor(52, 18);
+    display.setTextColor(false);
+    display.setTextSize(2);
+    display.print("SK");
+    display.setTextColor(true);
+    display.setTextSize(1);
     
     // Название
-    oled.setCursor(20, 48);
-    oled.print("OLED SSD1315 v1.1");
+    display.setCursor(20, 48);
+    display.print("OLED SSD1315 v1.1");
     
-    oled.flush();
+    display.flush();
     delay(2000);
 }
 ```
@@ -388,13 +388,13 @@ void splashScreen() {
 
 ```cpp
 void enterSleep() {
-    oled.setPower(false);  // Выключить дисплей
+    display.setPower(false);  // Выключить дисплей
     // Дисплей потребляет ~10µA в режиме сна
 }
 
 void wakeUp() {
-    oled.setPower(true);   // Включить дисплей
-    oled.flush();          // Восстановить изображение
+    display.setPower(true);   // Включить дисплей
+    display.flush();          // Восстановить изображение
 }
 ```
 
@@ -404,7 +404,7 @@ void wakeUp() {
 void adjustBrightness(int lightLevel) {
     // lightLevel: 0-1023 (от датчика освещённости)
     uint8_t contrast = map(lightLevel, 0, 1023, 0, 255);
-    oled.setContrast(contrast);
+    display.setContrast(contrast);
 }
 ```
 

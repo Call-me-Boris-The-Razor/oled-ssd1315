@@ -77,4 +77,16 @@
     #define OLED_WIRE_BUFFER_SIZE 32
 #endif
 
+// === I2C Chunk Size ===
+// STM32 HAL может передавать большие блоки, Arduino Wire ограничен 32 байтами
+#if OLED_USE_STM32HAL
+    #ifndef OLED_I2C_CHUNK_SIZE
+        #define OLED_I2C_CHUNK_SIZE 128
+    #endif
+#else
+    #ifndef OLED_I2C_CHUNK_SIZE
+        #define OLED_I2C_CHUNK_SIZE 16
+    #endif
+#endif
+
 #endif // OLED_CONFIG_HPP

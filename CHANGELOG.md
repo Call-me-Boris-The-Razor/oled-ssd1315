@@ -4,6 +4,42 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/).
 
+## [2.1.0] - 2025-01-09
+
+### Добавлено (STM32 Plug-and-Play)
+
+- **Диагностика ошибок**
+  - `getLastResult()` — получить код последней ошибки
+  - `getLastError()` — текстовое описание ошибки
+- **I2C сканер** — `scanAddress()` для автоматического поиска адреса
+- **DMA поддержка (STM32)** — non-blocking передача буфера
+  - `flushDMA()` — начать DMA передачу
+  - `isDMAComplete()` — проверить завершение
+- **I2C Bus Recovery (STM32)** — `i2cBusRecovery()` для восстановления зависшей шины
+- **Увеличенный CHUNK_SIZE** — 128 байт для STM32 HAL (было 16)
+- **Расширенная документация CubeMX** — пошаговая настройка для H7 серии
+
+### Изменено
+
+- **`OledResult`** — добавлены `Busy` и `Timeout`
+- **`OLED_I2C_CHUNK_SIZE`** — платформо-зависимый размер чанка
+
+### Новые методы API
+
+```cpp
+// Диагностика
+OledResult getLastResult() const;
+const char* getLastError() const;
+uint8_t scanAddress(uint8_t startAddr = 0x3C, uint8_t endAddr = 0x3D);
+
+// STM32 HAL только
+OledResult flushDMA();
+bool isDMAComplete() const;
+static bool i2cBusRecovery(void* gpioPort, uint16_t sclPin, uint16_t sdaPin);
+```
+
+---
+
 ## [2.0.0] - 2025-01-09
 
 ### Добавлено (Multi-Platform Support)

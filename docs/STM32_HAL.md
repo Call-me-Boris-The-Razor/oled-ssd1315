@@ -121,15 +121,51 @@ void MX_I2C1_Init(void) {
 }
 ```
 
-### Вариант 2: STM32CubeMX
+### Вариант 2: STM32CubeMX (подробно)
 
-1. Откройте CubeMX
-2. Включите I2C1 (или другой)
-3. Настройте:
-   - Speed: Fast Mode (400 kHz)
-   - Address: 7-bit
-4. Сгенерируйте код
-5. Используйте `hi2c1` в вашем приложении
+#### Шаг 1: Настройка I2C
+
+1. **Connectivity** → **I2C1** → **I2C**
+2. В **Parameter Settings**:
+   - **I2C Speed Mode**: Fast Mode (400 kHz)
+   - **I2C Clock Speed**: 400000
+   - **Primary Address Length**: 7-bit
+
+#### Шаг 2: Настройка GPIO (автоматически)
+
+CubeMX автоматически настроит пины:
+- **Mode**: Alternate Function Open Drain
+- **Pull-up**: Enabled (или внешние 4.7kΩ)
+
+#### Шаг 3: Настройка DMA (опционально, для flushDMA)
+
+1. **DMA Settings** → **Add**
+2. Выберите **I2C1_TX**
+3. **Mode**: Normal
+4. **Priority**: Medium
+5. **Memory increment**: Enabled
+
+#### Шаг 4: Настройка для H7 серии
+
+Для STM32H7 требуется настройка **Timing**:
+
+```text
+Parameter Settings:
+- I2C Timing: Рассчитайте через калькулятор CubeMX
+- Rise Time: 100 ns
+- Fall Time: 10 ns
+```
+
+Пример Timing для 400 kHz @ 64 MHz I2C clock:
+```cpp
+hi2c1.Init.Timing = 0x00B03FDB;  // Для STM32H743 @ 64 MHz
+```
+
+#### Шаг 5: Генерация кода
+
+1. **Project Manager** → **Toolchain/IDE**: Makefile или STM32CubeIDE
+2. **Generate Code**
+3. Скопируйте `stm32h7xx_hal_conf.h` и сгенерированные файлы
 
 ---
 
@@ -143,7 +179,7 @@ void MX_I2C1_Init(void) {
 
 extern I2C_HandleTypeDef hi2c1;
 
-OledSsd1315 oled(&hi2c1);
+OledSsd1315 display(&hi2c1);
 
 int main(void) {
     HAL_Init();
@@ -158,15 +194,15 @@ int main(void) {
     cfg.vccMode = VccMode::InternalChargePump;
     
     // Инициализация
-    if (oled.begin(cfg) != OledResult::Ok) {
+    if (display.begin(cfg) != OledResult::Ok) {
         Error_Handler();
     }
     
     // Вывод текста
-    oled.clear();
-    oled.setCursor(0, 0);
-    oled.print("Привет, STM32!");
-    oled.flush();
+    display.clear();
+    display.setCursor(0, 0);
+    display.print("Привет, STM32!");
+    display.flush();
     
     while (1) {
         // ...
@@ -178,22 +214,22 @@ int main(void) {
 
 ```cpp
 // Пиксель
-oled.pixel(64, 32, true);
+display.pixel(64, 32, true);
 
 // Линия
-oled.line(0, 0, 127, 63, true);
+display.line(0, 0, 127, 63, true);
 
 // Прямоугольник
-oled.rect(10, 10, 50, 30, true);      // Контур
-oled.rectFill(70, 10, 50, 30, true);  // Заливка
+display.rect(10, 10, 50, 30, true);      // Контур
+display.rectFill(70, 10, 50, 30, true);  // Заливка
 
 // Текст
-oled.setCursor(0, 50);
-oled.setTextSize(2);
-oled.printf("T: %d°C", temperature);
+display.setCursor(0, 50);
+display.setTextSize(2);
+display.printf("T: %d°C", temperature);
 
 // Отправить на дисплей
-oled.flush();
+display.flush();
 ```
 
 ---
@@ -215,7 +251,7 @@ cfg.resetCallback = &oledResetCallback;
 cfg.i2cAddr7 = 0x3C;
 // ...
 
-oled.begin(cfg);
+display.begin(cfg);
 ```
 
 Без callback библиотека просто ждёт 20мс для стабилизации питания.
@@ -261,9 +297,9 @@ if (status == HAL_TIMEOUT) {
 
 ### Нет текста на дисплее
 
-1. Убедитесь, что вызван `oled.flush()` после рисования
-2. Проверьте, что дисплей инициализирован: `oled.isReady()`
-3. Попробуйте инвертировать: `oled.invert(true)`
+1. Убедитесь, что вызван `display.flush()` после рисования
+2. Проверьте, что дисплей инициализирован: `display.isReady()`
+3. Попробуйте инвертировать: `display.invert(true)`
 
 ---
 
@@ -279,13 +315,13 @@ while (1) {
         lastUpdate = HAL_GetTick();
         
         // Очистить область
-        oled.rectFill(0, 40, 128, 24, false);
+        display.rectFill(0, 40, 128, 24, false);
         
         // Обновить данные
-        oled.setCursor(0, 40);
-        oled.printf("Tick: %lu", HAL_GetTick() / 1000);
+        display.setCursor(0, 40);
+        display.printf("Tick: %lu", HAL_GetTick() / 1000);
         
-        oled.flush();
+        display.flush();
     }
 }
 ```
@@ -313,22 +349,92 @@ void setup_displays() {
 
 ```cpp
 void showBootScreen() {
-    oled.clear();
+    display.clear();
     
     // Логотип (рамка)
-    oled.rect(24, 8, 80, 32, true);
+    display.rect(24, 8, 80, 32, true);
     
     // Название
-    oled.setCursor(32, 16);
-    oled.setTextSize(2);
-    oled.print("BOOT");
+    display.setCursor(32, 16);
+    display.setTextSize(2);
+    display.print("BOOT");
     
     // Прогресс-бар
     for (int i = 0; i <= 100; i += 10) {
-        oled.rectFill(14, 48, i, 8, true);
-        oled.flush();
+        display.rectFill(14, 48, i, 8, true);
+        display.flush();
         HAL_Delay(100);
     }
+}
+```
+
+---
+
+## Расширенные функции (v2.1.0+)
+
+### Диагностика ошибок
+
+```cpp
+OledResult result = display.begin(cfg);
+if (result != OledResult::Ok) {
+    const char* error = display.getLastError();
+    // error = "I2C NACK at init step 3" и т.п.
+}
+
+// Получить последний результат
+OledResult last = display.getLastResult();
+```
+
+### I2C сканер адресов
+
+```cpp
+// Автоматический поиск дисплея
+uint8_t addr = display.scanAddress(0x3C, 0x3D);
+if (addr != 0) {
+    cfg.i2cAddr7 = addr;
+    display.begin(cfg);
+}
+```
+
+### DMA передача (non-blocking)
+
+```cpp
+// Требует настроенный DMA для I2C TX в CubeMX
+
+// Начать передачу
+OledResult res = display.flushDMA();
+if (res == OledResult::Ok) {
+    // Передача начата
+}
+
+// Проверить завершение
+while (!display.isDMAComplete()) {
+    // Можно делать другую работу
+    processOtherTasks();
+}
+
+// Callback для завершения DMA (в stm32h7xx_it.c)
+void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c) {
+    // Установить флаг завершения
+    extern volatile bool dmaComplete;
+    dmaComplete = true;
+}
+```
+
+### Восстановление I2C шины
+
+Если SDA зависла в LOW:
+
+```cpp
+// Восстановление шины
+bool recovered = OledSsd1315::i2cBusRecovery(GPIOB, GPIO_PIN_6, GPIO_PIN_7);
+if (recovered) {
+    // Переинициализировать I2C
+    HAL_I2C_DeInit(&hi2c1);
+    HAL_I2C_Init(&hi2c1);
+    
+    // Переинициализировать дисплей
+    display.begin(cfg);
 }
 ```
 

@@ -126,13 +126,13 @@ void setup() {
     cfg.width = 128;
     cfg.height = 64;
     
-    if (oled.begin(cfg) != OledResult::Ok) {
+    if (display.begin(cfg) != OledResult::Ok) {
         return;
     }
     
-    oled.clear();
-    oled.print("Hello Arduino!");
-    oled.flush();
+    display.clear();
+    display.print("Hello Arduino!");
+    display.flush();
 }
 
 void loop() {}
@@ -145,7 +145,7 @@ void loop() {}
 #include <oled/OledSsd1315.hpp>
 
 extern I2C_HandleTypeDef hi2c1;
-OledSsd1315 oled(&hi2c1);
+OledSsd1315 display(&hi2c1);
 
 int main(void) {
     HAL_Init();
@@ -155,13 +155,13 @@ int main(void) {
     OledConfig cfg;
     cfg.i2cAddr7 = 0x3C;
     
-    if (oled.begin(cfg) != OledResult::Ok) {
+    if (display.begin(cfg) != OledResult::Ok) {
         Error_Handler();
     }
     
-    oled.clear();
-    oled.print("Привет STM32!");
-    oled.flush();
+    display.clear();
+    display.print("Привет STM32!");
+    display.flush();
     
     while (1) {}
 }
@@ -303,9 +303,9 @@ lib/oled_ssd1315/
 Библиотека поддерживает **UTF-8** строки с русскими символами:
 
 ```cpp
-oled.print("Привет мир!");
-oled.print("Hello World!");
-oled.printf("Темп: %d°C", temp);
+display.print("Привет мир!");
+display.print("Hello World!");
+display.printf("Темп: %d°C", temp);
 ```
 
 Поддерживаемые символы:
