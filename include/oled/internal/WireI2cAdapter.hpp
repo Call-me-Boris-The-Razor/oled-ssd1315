@@ -55,6 +55,13 @@ public:
      */
     bool write(uint8_t addr7, const uint8_t* data, size_t len) override;
     
+    /**
+     * @brief Проверить наличие устройства на шине
+     * @param addr7 7-битный адрес устройства
+     * @return true если устройство отвечает (ACK)
+     */
+    bool probe(uint8_t addr7) override;
+    
 private:
     TwoWire* wire_;
 };
@@ -72,6 +79,7 @@ public:
     template<typename T> void init(T&) {}
     bool isInitialized() const { return false; }
     bool write(uint8_t, const uint8_t*, size_t) override { return false; }
+    bool probe(uint8_t) override { return false; }
 };
 
 } // namespace oled

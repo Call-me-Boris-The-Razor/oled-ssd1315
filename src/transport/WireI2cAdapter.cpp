@@ -14,9 +14,9 @@ bool WireI2cAdapter::write(uint8_t addr7, const uint8_t* data, size_t len) {
         return false;
     }
     
-    // Отправляем данные пакетами по WIRE_BUFFER_SIZE - 1 байт
-    // (1 байт резервируется под адрес)
-    constexpr size_t maxChunk = WIRE_BUFFER_SIZE - 1;
+    // Отправляем данные пакетами по WIRE_BUFFER_SIZE байт
+    // Адрес не занимает место в буфере данных Wire
+    constexpr size_t maxChunk = WIRE_BUFFER_SIZE;
     
     size_t offset = 0;
     while (offset < len) {
@@ -33,6 +33,13 @@ bool WireI2cAdapter::write(uint8_t addr7, const uint8_t* data, size_t len) {
     }
     
     return true;
+}
+
+bool WireI2cAdapter::probe(uint8_t addr7) {
+    if (!wire_) return false;
+    
+    wire_->beginTransmission(addr7);
+    return wire_->endTransmission() == 0;  // 0 = ACK received
 }
 
 } // namespace oled

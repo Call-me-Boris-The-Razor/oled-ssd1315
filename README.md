@@ -4,7 +4,7 @@
 
 **Лёгкая библиотека для OLED дисплеев SSD1315/SSD1306**
 
-[![Версия](https://img.shields.io/badge/версия-2.0.0-blue.svg)](CHANGELOG.md)
+[![Версия](https://img.shields.io/badge/версия-2.1.0-blue.svg)](CHANGELOG.md)
 [![Лицензия](https://img.shields.io/badge/лицензия-MIT-green.svg)](LICENSE)
 [![PlatformIO](https://img.shields.io/badge/PlatformIO-совместим-orange.svg)](https://platformio.org)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org)
@@ -116,7 +116,7 @@ build_flags =
 #include <Wire.h>
 #include <oled/OledSsd1315.hpp>
 
-OledSsd1315 oled(Wire);
+OledSsd1315 display(Wire);
 
 void setup() {
     Wire.begin();

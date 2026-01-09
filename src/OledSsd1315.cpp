@@ -192,12 +192,8 @@ uint8_t OledSsd1315::scanAddress(uint8_t startAddr, uint8_t endAddr) {
         return 0;
     }
     
-    // Минимальная команда для проверки: пустой буфер
-    uint8_t dummy = 0x00;
-    
     for (uint8_t addr = startAddr; addr <= endAddr; addr++) {
-        bool found = adapter_.write(addr, &dummy, 0);
-        if (found) {
+        if (adapter_.probe(addr)) {
             return addr;
         }
     }
@@ -255,6 +251,10 @@ OledResult OledSsd1315::flushDMA() {
 
 bool OledSsd1315::isDMAComplete() const {
     return !dmaInProgress_;
+}
+
+void OledSsd1315::onDmaComplete() {
+    dmaInProgress_ = false;
 }
 
 bool OledSsd1315::i2cBusRecovery(void* gpioPort, uint16_t sclPin, uint16_t sdaPin) {

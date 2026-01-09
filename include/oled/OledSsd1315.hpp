@@ -263,6 +263,18 @@ public:
     bool isDMAComplete() const;
     
     /**
+     * @brief Callback для завершения DMA передачи
+     * 
+     * Вызывайте этот метод из HAL_I2C_MasterTxCpltCallback:
+     * @code
+     * void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c) {
+     *     display.onDmaComplete();
+     * }
+     * @endcode
+     */
+    void onDmaComplete();
+    
+    /**
      * @brief Восстановить I2C шину после зависания
      * @param gpioPort Порт GPIO (например GPIOB)
      * @param sclPin Пин SCL

@@ -29,6 +29,13 @@ struct II2c {
      */
     virtual bool write(uint8_t addr7, const uint8_t* data, size_t len) = 0;
     
+    /**
+     * @brief Проверить наличие устройства на шине (ping)
+     * @param addr7 7-битный адрес устройства
+     * @return true если устройство отвечает (ACK)
+     */
+    virtual bool probe(uint8_t addr7) = 0;
+    
     virtual ~II2c() = default;
 };
 

@@ -93,6 +93,27 @@ public:
         return (status == HAL_OK);
     }
     
+    /**
+     * @brief Проверить наличие устройства на шине
+     * @param addr7 7-битный адрес устройства
+     * @return true если устройство отвечает (ACK)
+     */
+    bool probe(uint8_t addr7) override {
+        if (!hi2c_) return false;
+        
+        uint16_t addr8 = static_cast<uint16_t>(addr7) << 1;
+        
+        // HAL_I2C_IsDeviceReady проверяет наличие устройства
+        HAL_StatusTypeDef status = HAL_I2C_IsDeviceReady(
+            hi2c_,
+            addr8,
+            1,       // Trials
+            timeout_
+        );
+        
+        return (status == HAL_OK);
+    }
+    
 private:
     I2C_HandleTypeDef* hi2c_;
     uint32_t timeout_;
